@@ -3,7 +3,7 @@ from imports import *
 scheduler = BackgroundScheduler()
 app = Flask(__name__)
 s=0     #s0 s1
-players=[[][]]
+players=[]
 bullets=[]
 gravity=0.65
 turn=0
@@ -88,7 +88,7 @@ def Spawn(thing,side):
         run(e)
 
 
-scheduler.add_job(tick,'interval',seconds=0.02)
+#scheduler.add_job(tick,'interval',seconds=0.02)
 
         
     
@@ -111,6 +111,7 @@ def side():
         s+=1
         return "0"
     if s==1:
+        s=0
         return "1"
     NewGame()
     return "0"

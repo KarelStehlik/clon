@@ -1,3 +1,4 @@
+from imports import *
 class platform():
     x=0
     y=0
@@ -24,7 +25,7 @@ platform2.y=200
 map1.append(platform2)
 maps=[map1]
 
-class bullet()
+class bullet():
     x=100
     y=100
     vx=0

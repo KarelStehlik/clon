@@ -1,3 +1,5 @@
+from imports import *
+map1=[]
 class bullet():
     x=100
     y=100
@@ -67,7 +69,6 @@ platform2.x=200
 platform2.graphicx=200
 platform2.y=200
 map1.append(platform2)
-player_side=requests.get('http://127.0.0.1:5000/GetSide')
 
 class player():
     side=0
