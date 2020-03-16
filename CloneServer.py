@@ -18,6 +18,8 @@ def ScanDown(x,y,map1):
     return(r)
 
 def tick():
+    global clock
+    clock.tick()
     for e in bullets:
         e.fly()
     global players, map1, gravity
@@ -62,10 +64,58 @@ def blah():
 
 @app.route("/a_press",methods=["GET","POST"])
 def a_press():
-    return '5'
+    side=str(request.data)[2:-1]
+    global players
+    for e in players:
+        if e.active==1 and e.side=side:
+            e.walkingA=True
+            return 'done'
 
+@app.route("/d_press",methods=["GET","POST"])
+def d_press():
+    side=str(request.data)[2:-1]
+    global players
+    for e in players:
+        if e.active==1 and e.side=side:
+            e.walkingD=True
+            return 'done'
 
-# Shut down the scheduler when exiting the app
+@app.route("/w_press",methods=["GET","POST"])
+def w_press():
+    side=str(request.data)[2:-1]
+    global players
+    for e in players:
+        if e.active==1 and e.side=side:
+            e.w()
+
+@app.route("/a_release",methods=["GET","POST"])
+def a_release():
+    side=str(request.data)[2:-1]
+    global players
+    for e in players:
+        if e.active==1 and e.side=side:
+            e.walkingA=False
+            return 'done'
+
+@app.route("/b_release",methods=["GET","POST"])
+def a_release():
+    side=str(request.data)[2:-1]
+    global players
+    for e in players:
+        if e.active==1 and e.side=side:
+            e.walkingA=True
+            return 'done'
+
+@app.route("/shoot",methods=["GET","POST"])
+def a_press():
+    dat=str(request.data)[2:-1].split(" ")
+    side=dat[0]
+    global players
+    for e in players:
+        if e.active==1 and e.side=side:
+            e.attempt_to_shoot(dat[1],dat[2])
+            return 'done'
+
 atexit.register(lambda: scheduler.shutdown())
 
 
