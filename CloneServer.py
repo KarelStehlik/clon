@@ -1,6 +1,7 @@
 #!flask/bin/python
 from imports import *
 scheduler = BackgroundScheduler()
+scheduler.start()
 app = Flask(__name__)
 s=0     #s0 s1
 players=[]
@@ -20,75 +21,13 @@ def tick():
     for e in bullets:
         e.fly()
     global players, map1, gravity
-    if shooting:
-        if time.time()-players[-1].lastshot>=players[-1].cd:
-            players[-1].shoot(0,turn, mousex-players[-1].graphicx, mousey-players[-1].y-players[-1].hitboxh//2)
     for e in players:
-        if ScanDown(e.x,e.y,map1):
-            e.v-=gravity
-        else:
-            e.v=max(e.v,0)
-        e.y+=max(e.v,-ScanDown(e.x,e.y,map1))
-        if e.y<0:
-            e.die(0,turn)
-            e.v=max(e.v,0)
+        e.fall(map1)
+        if e.active and e.shooting:
+            e.attempt_to_shoot(mousex-e.graphicx, mousey-e.y-e.hitboxh//2)
+        
 
-def run(self):
-    global turn
-    global camx
-    if self.active==0:
-        lgg=self.log
-        self.hp=self.maxhp
-        self.dead=0
-        self.x=50
-        self.y=300
-        if(self.side==1):
-            self.x=600
-        for e in self.log:
-            if e[0]=="S":
-                clock.schedule_once(self.shoot,e[1],turn,e[2],e[3])
-            if e[0]=="w":
-                clock.schedule_once(self.w,e[1],turn)
-            if e[0]=="d":
-                clock.schedule_once(self.d,e[1],turn)
-            if e[0]=="a":
-                clock.schedule_once(self.a,e[1],turn)
-            if e[0]=="ded":
-                clock.schedule_once(self.die,e[1],turn)
-            if self.hp<=0:
-                break
-        self.log=lgg
-
-def Spawn(thing,side):
-    global players 
-    p1=player()
-    p1.t1=time.time()
-    for e in players:
-        e.active=0
-    p1.active=1
-    p1.maxhp=thing[0]
-    p1.hp=p1.maxhp
-    p1.dmg=thing[1]
-    p1.cd=thing[2]
-    p1.bulletspeed=thing[3]
-    p1.rang=thing[4]
-    p1.hitboxw=thing[5]
-    p1.hitboxh=thing[6]
-    p1.walkspeed=thing[7]
-    p1.jumppower=thing[8]
-    p1.log=[]
-    p1.side=side
-    if(side==1):
-        p1.x=600
-        camx=600-place.width/2
-    else:
-        camx=0
-    players.append(p1)
-    for e in players:
-        run(e)
-
-
-#scheduler.add_job(tick,'interval',seconds=0.02)
+scheduler.add_job(tick,'interval',seconds=0.02)
 
         
     
@@ -103,19 +42,27 @@ def NewGame():
 
 NewGame()
 
-
 @app.route('/GetSide')
 def side():
     global s
     if s==0:
         s+=1
-        return "0"
+        return Response('0', mimetype='text/plain')
     if s==1:
-        s=0
-        return "1"
+        s+=1
+        return Response('1', mimetype='text/plain')
     NewGame()
-    return "0"
+    return Response('0', mimetype='text/plain')
 
+@app.route("/Test",methods=["GET","POST"])
+def blah():
+    a=str(request.data)[2:-1]
+    print(a)
+    return "-".join(a.split(" "))
+
+@app.route("/a_press",methods=["GET","POST"])
+def a_press():
+    return '5'
 
 
 # Shut down the scheduler when exiting the app

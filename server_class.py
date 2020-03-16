@@ -81,41 +81,70 @@ class player():
     hp=50
     dead=0
     lastshot=time.time()
-    def die(self,dt,t):
+    shooting=False
+    walkingA=False
+    walkingD=False
+    
+    def attempt_to_shoot(self,x,y):
+        t=time.time()
+        if t-self.lastshot>=self.cd:
+            self.shoot(x,y)
+            self.lastshot=time.time()
+        else if t-self.lastshot>=self.cd-0.3:
+            clock.schedule_once(lambda dt: shoot(x,y),self.cd-t+self.lastshot )
+    
+    def ScanDown(self,map1):
+        r=100000000
+        for e in map1:
+            if e.x<x and e.x+e.width>self.x and e.y+e.height<=self.y:
+                r=min(r,self.y-e.y-e.height)
+        return(r)
+    
+    def fall(self,map1):
+        if self.ScanDown(map1):
+            self.v-=gravity
+        else:
+            self.v=max(self.v,0)
+        self.y+=max(self.v,-ScanDown(self.x,self.y,map1))
+        if self.y<0:
+            self.die(0,turn)
+            self.v=max(self.v,0)
+            
+    def die(self,t):
         if t==turn:
             self.dead=1
             if self.active==1:
                 self.log.append(["ded",time.time()-self.t1])
             self.active=0
             
-    def takedmg(self,dt,amount):
+    def takedmg(self,amount):
         if self.dead==0:
             self.hp-=amount
             if self.hp<=0:
                 self.die(0,turn)
                 
-    def a(self,dt,t):
-        if self.dead==0 and t==turn:
+    def a(self):
+        if self.dead==0:
             self.x-=min(self.walkspeed,self.x)
             if self.active==1:
                 self.log.append(["a",time.time()-self.t1])           
                             
-    def d(self,dt,t):
-        if self.dead==0 and t==turn:
+    def d(self):
+        if self.dead==0:
             self.x+=self.walkspeed
             if self.active==1:
                 self.log.append(["d",time.time()-self.t1])
                             
-    def w(self,dt,t):
-        if self.dead==0 and t==turn:
+    def w(self):
+        if self.dead==0:
             global map1
             if ScanDown(self.x,self.y,map1)==0:
                 self.v=self.jumppower
                 if self.active==1:
                     self.log.append(["w",time.time()-self.t1])
 
-    def shoot(self,dt,t,x,y):
-        if self.dead==0 and t==turn:
+    def shoot(self,x,y):
+        if self.dead==0:
             if x==0:
                 x=1
             if y==0:
@@ -133,9 +162,31 @@ class player():
             shot.lifespan=self.rang//self.bulletspeed
             bullets.append(shot)
             shot.fly(0)
-            self.lastshot=time.time()
             if self.active==1:
                 self.log.append(["S",time.time()-self.t1,x,y])
+    def run(self):
+        global turn
+        global camx
+        if self.active==0:
+            self.hp=self.maxhp
+            self.dead=0
+            self.x=50
+            self.y=300
+            if(self.side==1):
+                self.x=600
+            for e in self.log:
+                if e[0]=="S":
+                    clock.schedule_once(self.shoot,e[1],turn,e[2],e[3])
+                if e[0]=="w":
+                    clock.schedule_once(self.w,e[1],turn)
+                if e[0]=="d":
+                    clock.schedule_once(self.d,e[1],turn)
+                if e[0]=="a":
+                    clock.schedule_once(self.a,e[1],turn)
+                if e[0]=="ded":
+                    clock.schedule_once(self.die,e[1],turn)
+                if self.hp<=0:
+                    break
 
 
         #hp dmg  aspd bspd range   hbxX hbxY
@@ -148,4 +199,32 @@ BasicGuy2=[100,5, 0.05,0.5 ,1.1,   35,   60,
 possible_units=[]
 possible_units.append(BasicGuy)
 possible_units.append(BasicGuy2)
+
+def Spawn(thing,side):
+    global players 
+    p1=player()
+    p1.t1=time.time()
+    for e in players:
+        e.active=0
+    p1.active=1
+    p1.maxhp=thing[0]
+    p1.hp=p1.maxhp
+    p1.dmg=thing[1]
+    p1.cd=thing[2]
+    p1.bulletspeed=thing[3]
+    p1.rang=thing[4]
+    p1.hitboxw=thing[5]
+    p1.hitboxh=thing[6]
+    p1.walkspeed=thing[7]
+    p1.jumppower=thing[8]
+    p1.log=[]
+    p1.side=side
+    if(side==1):
+        p1.x=600
+        camx=600-place.width/2
+    else:
+        camx=0
+    players.append(p1)
+    for e in players:
+        run(e)
 

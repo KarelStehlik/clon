@@ -1,5 +1,7 @@
 from imports import *
 import threading
+scheduler = BackgroundScheduler()
+scheduler.start()
 place = pyglet.window.Window(resizable=True,caption='CLOWN WARS!')
 keys = key.KeyStateHandler()
 place.set_minimum_size(100,100)
@@ -267,6 +269,7 @@ def run(self):
                 clock.schedule_once(self.shoot,e[1],turn,e[2],e[3])
             if e[0]=="w":
                 clock.schedule_once(self.w,e[1],turn)
+                #scheduler.add_job(self.w,'interval',args=[e[1],turn],seconds=e[1],max_instances=1)
             if e[0]=="d":
                 clock.schedule_once(self.d,e[1],turn)
             if e[0]=="a":
@@ -406,7 +409,7 @@ tick(0)
 def grq():
     time.sleep(1)
     return 200
-
+"""
 class myThread (threading.Thread):
    def __init__(self, threadID):
       threading.Thread.__init__(self)
@@ -423,6 +426,7 @@ class myThread (threading.Thread):
 
 thread1=myThread(1)
 thread1.start()
+"""
 
 @place.event
 def on_key_press(symbol, modifiers):
@@ -437,8 +441,8 @@ def on_key_press(symbol, modifiers):
     if symbol==key.V:
         player_side=1-player_side
         new_clone()
-    if symbol==key.B:
-        thread1.fff()
+    #if symbol==key.B:
+    #    thread1.fff()
 
 def choose_clone():
     global players

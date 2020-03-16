@@ -9,7 +9,8 @@ players=[]
 bullets=[]
 CCpics=[]
 gravity=0.65
-print(requests.get("http://localhost:5000/GetSide").text)
+side=int(requests.get("http://localhost:5000/GetSide").text)
+
 
 def tick():
     for e in bullets:
