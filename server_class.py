@@ -90,7 +90,7 @@ class player():
         if t-self.lastshot>=self.cd:
             self.shoot(x,y)
             self.lastshot=time.time()
-        else if t-self.lastshot>=self.cd-0.3:
+        elif t-self.lastshot>=self.cd-0.3:
             clock.schedule_once(lambda dt: shoot(x,y),self.cd-t+self.lastshot )
     
     def ScanDown(self,map1):

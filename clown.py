@@ -1,7 +1,5 @@
 from imports import *
 import threading
-scheduler = BackgroundScheduler()
-scheduler.start()
 place = pyglet.window.Window(resizable=True,caption='CLOWN WARS!')
 keys = key.KeyStateHandler()
 place.set_minimum_size(100,100)
@@ -12,43 +10,37 @@ camx=0
 bullets=[]
 gravity=0.65
 turn=0
+#player_side=int(requests.get("http://localhost:5000/GetSide").text)
 player_side=0
 CCpics=[]
 clone_frame=pyglet.resource.image('clone_select.png')
 clone_frame.width=270
 clone_frame.height=430
-class platform():
-    x=0
-    y=0
-    height=0
-    width=0
-    pic=0
+clone_frame=pyglet.sprite.Sprite(clone_frame)
+
+class platform:
     graphicx=0
-    pic=pyglet.resource.image('platform.png')
+    def __init__(self,w,h,x,y):
+        global map1
+        self.pic=pyglet.resource.image('platform.png')
+        self.width=w
+        self.height=h
+        self.x=x
+        self.y=y
+        self.pic=pyglet.sprite.Sprite(self.pic,x,y)
+        self.pic.scale_x=w/self.pic.width
+        self.pic.scale_y=h/self.pic.height
+        map1.append(self)
     def draw(self):
-        self.pic.width=self.width
-        self.pic.height=self.height
-        self.pic.blit(self.graphicx,self.y)
-floor=platform()
-floor.width=20000
-floor.height=20
-floor.x=-600
-floor.graphicx=-600
-map1.append(floor)
-platform1=platform()
-platform1.height=30
-platform1.width=200
-platform1.x=500
-platform1.graphicx=500
-platform1.y=100
-map1.append(platform1)
-platform2=platform()
-platform2.height=30
-platform2.width=200
-platform2.x=200
-platform2.graphicx=200
-platform2.y=200
-map1.append(platform2)
+        self.pic.x=self.graphicx
+        self.pic.draw()
+        
+floor=platform(20000,20,-600,0)
+
+platform1=platform(200,30,500,100)
+
+platform2=platform(200,30,200,200)
+
 mouseheld=False
 mousex=0
 mousey=0
@@ -74,14 +66,13 @@ class bullet():
         bullets=bnew
         self.dead=1
         del self
-    def fly(self,dt):
+    def fly(self):
         self.x+=self.vx
         self.y+=self.vy
         self.lifespan-=1
         if self.lifespan<=0:
             self.die()
         if self.dead==0:
-            clock.schedule_once(self.fly,0.01)
             for e in players:
                 if (e.x-e.hitboxw//2<self.x<e.x+e.hitboxw//2) and (e.y<self.y<e.y+e.hitboxh) and (self.side != e.side):
                     if e.dead==0:
@@ -128,11 +119,14 @@ class player():
     graphicx=0
     hp=50
     dead=0
-    hpgreen=copy.copy(pyglet.resource.image('GreenButton.png'))
+    a=pyglet.resource.image('GreenButton.png')
+    a.width=hitboxw
+    a.height=hitboxw//5
+    hpgreen=pyglet.sprite.Sprite(a)
     hpred=pyglet.resource.image('RedButton.png')
     hpgreen_width=hitboxw
-    hpred.width=hitboxw
-    hpgreen.height=hitboxw//5
+   # hpred.width=hitboxw
+  #  hpgreen.height=int(hitboxw//5)
     hpred.height=hitboxw//5
     lastshot=time.time()
     def die(self,dt,t):
@@ -152,8 +146,10 @@ class player():
         if self.dead==0:
             self.hpred.width=self.hpred_width
             self.hpred.blit(self.graphicx-self.hitboxw//2,self.y+self.hitboxh)
-            self.hpgreen.width=self.hpgreen_width
-            self.hpgreen.blit(self.graphicx-self.hitboxw//2,self.y+self.hitboxh)
+            self.hpgreen.scale_x=self.hp/self.maxhp
+            self.hpgreen.x=self.graphicx-self.hitboxw//2
+            self.hpgreen.y=self.y+self.hitboxh
+            self.hpgreen.draw()
             if self.facing==1:
                 self.skin.blit(self.graphicx-self.hitboxw//2,self.y)
             else:
@@ -208,7 +204,6 @@ class player():
             shot.y=self.y+self.hitboxh//2
             shot.lifespan=self.rang//self.bulletspeed
             bullets.append(shot)
-            shot.fly(0)
             self.lastshot=time.time()
             if self.active==1:
                 self.log.append(["S",time.time()-self.t1,x,y])
@@ -304,7 +299,7 @@ def Spawn(thing,side):
     p1.log=[]
     p1.side=side
     p1.hpgreen_width=p1.hitboxw
-    p1.hpgreen.width=p1.hitboxw
+    p1.hpgreen.scale_x=1
     p1.hpred.width=p1.hitboxw
     p1.hpred_width=p1.hitboxw
     if(side==1):
@@ -315,7 +310,6 @@ def Spawn(thing,side):
     else:
         camx=0
     players.append(p1)
-    players[-1].hpgreen.width=players[-1].hitboxw
     for e in players:
         run(e)
 
@@ -377,6 +371,8 @@ def tick(dt):
     global map1
     global camx
     global gravity
+    for e in bullets:
+        e.fly()
     if mouseheld:
         if time.time()-players[-1].lastshot>=players[-1].cd:
             players[-1].shoot(0,turn, mousex-players[-1].graphicx, mousey-players[-1].y-players[-1].hitboxh//2)
@@ -403,8 +399,8 @@ def tick(dt):
         players[-1].d(0,turn)
     if keys[key.A]:
         players[-1].a(0,turn)
-    clock.schedule_once(tick,0.01)
-tick(0)
+    
+clock.schedule_interval(tick,0.01)
 
 def grq():
     time.sleep(1)

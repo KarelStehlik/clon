@@ -1,5 +1,38 @@
 from imports import *
+players=[]
 map1=[]
+bullets=[]
+CCpics=[]
+clone_frame=pyglet.resource.image('clone_select.png')
+clone_frame.width=270
+clone_frame.height=430
+
+class platform():
+    x=0
+    y=0
+    height=0
+    width=0
+    pic=0
+    graphicx=0
+    pic=pyglet.resource.image('platform.png')
+    def draw(self):
+        self.pic.width=self.width
+        self.pic.height=self.height
+        self.pic.blit(self.graphicx,self.y)
+
+def new_platform(w,h,x,y):
+    platform1=platform()
+    platform1.height=h
+    platform1.width=w
+    platform1.x=x
+    platform1.graphicx=x
+    platform1.y=y
+    return platform1
+    
+map1.append(new_platform(20000,20,-600,0))
+map1.append(new_platform(200,30,500,100))
+map1.append(new_platform(200,30,200,200))
+
 class bullet():
     x=100
     y=100
@@ -21,13 +54,14 @@ class bullet():
         bullets=bnew
         self.dead=1
         del self
-    def fly(self):
+    def fly(self,dt):
         self.x+=self.vx
         self.y+=self.vy
         self.lifespan-=1
         if self.lifespan<=0:
             self.die()
         if self.dead==0:
+            clock.schedule_once(self.fly,0.01)
             for e in players:
                 if (e.x-e.hitboxw//2<self.x<e.x+e.hitboxw//2) and (e.y<self.y<e.y+e.hitboxh) and (self.side != e.side):
                     if e.dead==0:
@@ -37,38 +71,13 @@ class bullet():
         global camx
         self.graphicx=self.x-camx
         self.model.blit(self.graphicx,self.y)
-class platform():
-    x=0
-    y=0
-    height=0
-    width=0
-    pic=0
-    graphicx=0
-    pic=pyglet.resource.image('platform.png')
-    def draw(self):
-        self.pic.width=self.width
-        self.pic.height=self.height
-        self.pic.blit(self.graphicx,self.y)
-floor=platform()
-floor.width=20000
-floor.height=20
-floor.x=-600
-floor.graphicx=-600
-map1.append(floor)
-platform1=platform()
-platform1.height=30
-platform1.width=200
-platform1.x=500
-platform1.graphicx=500
-platform1.y=100
-map1.append(platform1)
-platform2=platform()
-platform2.height=30
-platform2.width=200
-platform2.x=200
-platform2.graphicx=200
-platform2.y=200
-map1.append(platform2)
+
+def ScanDown(x,y,cmap):
+    r=10000
+    for e in cmap:
+        if e.x<x and e.x+e.width>x and e.y+e.height<=y:
+            r=min(r,y-e.y-e.height)
+    return(r)
 
 class player():
     side=0
@@ -179,3 +188,39 @@ class player():
             self.lastshot=time.time()
             if self.active==1:
                 self.log.append(["S",time.time()-self.t1,x,y])
+
+BasicGuy={"hp":50, "dmg":20, "aspd":0.7, "bspd":5.2, "range":550, "hitboxX":30, "hitboxY":70,
+          "skin":pyglet.resource.image('GGunman.png'),
+          "Fskin":pyglet.resource.image('GGunman.png').get_transform(flip_x=True, flip_y=False, rotate=0),
+          "spd":3.5,"jump":14,"Bskin":pyglet.resource.image('BGunman.png'),
+          "FBskin":pyglet.resource.image('BGunman.png').get_transform(flip_x=True, flip_y=False, rotate=0)}
+
+Mixer={"hp":100, "dmg":5, "aspd":0.05, "bspd":0.5, "range":1.1, "hitboxX":35, "hitboxY":60,
+          "skin":pyglet.resource.image('GMixer.png'),
+          "Fskin":pyglet.resource.image('GMixer.png').get_transform(flip_x=True, flip_y=False, rotate=0),
+          "spd":5,"jump":16,"Bskin":pyglet.resource.image('BMixer.png'),
+          "FBskin":pyglet.resource.image('BMixer.png').get_transform(flip_x=True, flip_y=False, rotate=0)}
+possible_units=[]
+possible_units.append(BasicGuy)
+possible_units.append(BasicGuy2)
+
+BasicGuy["skin"].width=40
+BasicGuy["skin"].height=70
+BasicGuy["Fskin"].width=40
+BasicGuy["Fskin"].height=70
+BasicGuy["Bskin"].width=40
+BasicGuy["Bskin"].height=70
+BasicGuy["FBskin"].width=40
+BasicGuy["FBskin"].height=70
+
+Mixer["skin"].width=35
+Mixer["skin"].height=60
+Mixer["Fskin"].width=35
+Mixer["Fskin"].height=60
+Mixer["Bskin"].width=35
+Mixer["Bskin"].height=60
+Mixer["FBskin"].width=35
+Mixer["FBskin"].height=60
+
+Mixer["Fskin"].anchor_x-=11
+Mixer["Fskin"].anchor_x-=11
