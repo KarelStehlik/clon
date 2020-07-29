@@ -1,4 +1,3 @@
-#!flask/bin/python
 from imports import *
 scheduler = BackgroundScheduler()
 scheduler.start()
@@ -128,9 +127,9 @@ def shoot():
             e.attempt_to_shoot(request.form["x"],request.form["y"])
             return 'done'
 
-@app.route("/testy",methods=["GET","POST"])
+@app.route("/testy/<txt>")
 def testy():
-    return {"r":request.form["a"]+"1", "r2":"5"}
+    return "r"+txt
     
 
 atexit.register(lambda: scheduler.shutdown())

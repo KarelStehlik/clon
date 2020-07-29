@@ -1,0 +1,10 @@
+import pyglet
+gunmanR=pyglet.image.load("BGunman.png")
+gunmanG=pyglet.image.load("GGunman.png")
+mixerR=pyglet.image.load("BMixer.png")
+mixerG=pyglet.image.load("GMixer.png")
+bullet=pyglet.image.load("Bullet.png")
+buttonG=pyglet.image.load("GreenButton.png")
+buttonR=pyglet.image.load("RedButton.png")
+platform=pyglet.image.load("platform.png")
+cloneFrame=pyglet.image.load("clone_select.png")

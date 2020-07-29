@@ -1,9 +1,6 @@
 from imports import *
 import threading
-place = pyglet.window.Window(resizable=True,caption='CLOWN WARS!')
 keys = key.KeyStateHandler()
-place.set_minimum_size(100,100)
-pyglet.gl.glClearColor(0.2,0.3,1,1)
 players=[]
 map1=[]
 camx=0
@@ -313,61 +310,8 @@ def Spawn(thing,side):
     for e in players:
         run(e)
 
-Spawn(BasicGuy,0)
-                    
-@place.event
-def on_mouse_motion(x, y, dx, dy):
-    global mousex
-    global mousey
-    global CCpics,camx
-    mousex=x+dx
-    mousey=y+dy
-    if len(CCpics)>1:
-        if mousex<40:
-            camx-=2
-            for e in CCpics:
-                e[1]+=2
-        if mousex>place.width-40:
-            camx+=2
-            for e in CCpics:
-                e[1]-=2
-
-@place.event
-def on_mouse_press(x, y, button, modifiers):
-    global mouseheld
-    global turn,CCpics
-    mouseheld=True
-    if len(CCpics)>1:
-        if mousey>20 and mousey<450:
-            #i*290+20
-            if (mousex+camx)-290*((mousex+camx)//290)>=20 and (mousex+camx)<=290*len(possible_units):
-                clone_choice=possible_units[mousex//290]
-            
-                tick(0)    
-                players[-1].die(0,turn)
-                turn+=1
-                Spawn(clone_choice,player_side)
-                for e in bullets:
-                    e.die()
-                CCpics=[]
-    
-@place.event
-def on_mouse_release(x, y, button, modifiers):
-    global mouseheld
-    mouseheld=False
-
-@place.event
-def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
-    global mousex
-    global mousey
-    mousex=x+dx
-    mousey=y+dy
- 
-
-
 def tick(dt):
     global players
-#    global enemies
     global map1
     global camx
     global gravity
@@ -387,20 +331,12 @@ def tick(dt):
         e.y+=max(e.v,-ScanDown(e.x,e.y,map1))
         if e.y<0:
             e.die(0,turn)
-#    for e in enemies:
-#        e.graphicx=e.x-camx
-#        if ScanDown(e.x,e.y,map1):
-#            e.v-=gravity
-#        else:
             e.v=max(e.v,0)
-#        e.y+=max(e.v,-ScanDown(e.x,e.y,map1))
     place.push_handlers(keys)
     if keys[key.D]:
         players[-1].d(0,turn)
     if keys[key.A]:
         players[-1].a(0,turn)
-    
-clock.schedule_interval(tick,0.01)
 
 def grq():
     time.sleep(1)
@@ -424,22 +360,6 @@ thread1=myThread(1)
 thread1.start()
 """
 
-@place.event
-def on_key_press(symbol, modifiers):
-    global players
-    global BasicGuy
-    global turn
-    global player_side
-    if symbol==key.W:
-        for e in players:
-            if e.active==1:
-                e.w(0,turn)
-    if symbol==key.V:
-        player_side=1-player_side
-        new_clone()
-    #if symbol==key.B:
-    #    thread1.fff()
-
 def choose_clone():
     global players
     global BasicGuy
@@ -459,43 +379,113 @@ def choose_clone():
             CCpics[-1][0].width=200
             CCpics[-1][0].height=350
 
-    
+##########################################################
+class minimode_choosing():
+    def __init__(self,**kwargs):
+        self.pics_clonesG=[]
+        self.pics_clonesR=[]
+        self.pics_frames=[pyglet.sprite.Sprite(images.cloneFrame,i*290+20,
+                          20) for i in range(len(self.possible_clones))]
+        self.pics_clones=[]
+        self.batch_red=pyglet.graphics.Batch()
+        self.batch_green=pyglet.graphics.Batch()
+        self.shift=0
+        self.win=kwargs["win"]
+    def mouse_move(self,x,y,dx,dy):
+        if x<40:
+            self.shift-=2
+            for e in self.pics_frames+self.pics_clones:
+                e.x+=2
+        if x>self.win.width-40:
+            self.shift+=2
+            for e in self.pics_frames+self.pics_clones:
+                e.x-=2
+    def mouse_press(self,x,y,button,modifiers):
+        i=0
+        for e in self.pics_frames:
+            if e.x<x<e.x+e.width and a.y<y<e.height:
+                choice=possible_units[i]
+                players[-1].die(0,turn)
+                turn+=1
+                Spawn(clone_choice,player_side)
+                for k in bullets:
+                    k.die()
+                return
+            i+=1
+class mode_testing():
+    def __init__(self,**kwargs):
+        global testBlocks
+        self.mainBatch = pyglet.graphics.Batch()
+        self.fpscount=pyglet.text.Label(x=5,y=5,text="aaa",color=(255,255,255,255))
+        self.win=kwargs["win"]
+        self.mousex,self.mousey,self.frames,self.sec,self.camx,self.mouseheld=0,0,0,0,0,False
+        self.choosing_clones,self.cc=False,minimode_choosing(win=self.win)
+        self.players=[]
+        self.turn,self.turnTime=0,0
+    def new_clone():
+        self.camx=0
+        self.turn+=1
+        self.turnTime=0
+        choose_clone()
+    def mouse_move(self,x, y, dx, dy):
+        self.mousex=x
+        self.mousey=y
+        if self.choosing_clones:
+            self.cc.mouse_move(x,y,dx,dy)
+    def mouse_drag(self,x, y, dx, dy, button, modifiers):
+        self.mouse_move(x,y,dx,dy)
+    def tick(self,dt):
+        self.win.switch_to()
+        self.draw_all()
+        self.fpscount.draw()
+        self.check(dt)
+        self.win.flip()
+    def check(self,dt):
+        self.sec+=dt
+        self.frames+=1
+        if self.sec>1:
+            self.sec-=1
+            self.fpscount.text=str(self.frames)
+            self.frames=0
+    def draw_all(self):
+        self.win.clear()
+        self.mainBatch.draw()
+    def key_press(self,symbol,modifiers):
+        if symbol==key.W:
+            self.activePlayer.w(0,turn)
+        if symbol==key.V:
+            player_side=1-player_side
+            new_clone()
+    def mouse_press(self,x,y,button,modifiers):
+        self.mouseheld=True
+        if self.choosing_clones:
+            self.cc.mouse_press(x,y,button,modifiers)
+    def mouse_release(self,x,y,button,modifiers):
+        self.mouseheld=False
 
-def new_clone():
-    global players
-    global BasicGuy
-    global turn
-    global camx
-    camx=0
-    clock.unschedule(tick)
-    for e in bullets:
-        clock.unschedule(e.fly)
-    for e in players:
-        clock.unschedule(e.shoot)
-        clock.unschedule(e.w)
-        clock.unschedule(e.d)
-        clock.unschedule(e.a)
-        clock.unschedule(e.die)
-    choose_clone()
-
-
-
-@place.event
-def on_key_release(symbol, modifiers):
-    pass
-
-@place.event
-def on_draw():
-    place.clear()
-    glEnable(GL_BLEND)
-    for e in map1+bullets:
-        e.draw()
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-    for e in players:
-        e.draw()
-    for e in CCpics:
-        e[0].blit(e[1],e[2])
-    
-
-pyglet.app.run()
-
+class windoo(pyglet.window.Window):
+    def start(self):
+        self.currentMode=mode_testing(win=self)
+    def on_mouse_motion(self,x, y, dx, dy):
+        self.currentMode.mouse_move(x,y,dx,dy)
+    def on_mouse_drag(self,x,y,dx,dy,button,modifiers):
+        self.currentMode.mouse_drag(x,y,dx,dy,button,modifiers)
+    def on_close(self):
+        self.close()
+        os._exit(0)
+    def tick(self,dt):
+        self.dispatch_events()
+        self.currentMode.tick(dt)
+    def on_key_press(self,symbol,modifiers):
+        self.currentMode.key_press(symbol,modifiers)
+    def on_mouse_release(self, x, y, button, modifiers):
+        self.currentMode.mouse_release(x,y,button,modifiers)
+place = windoo(resizable=True,caption='test')
+display = pyglet.canvas.Display()
+screen = display.get_default_screen()
+place.set_size(int(screen.width*0.45),int(screen.height*2/3))
+place.set_location(screen.width//2,int(screen.height*1/6))
+place.start()
+pyglet.clock.schedule_interval(place.tick,1.0/60)
+while True:
+    pyglet.clock.tick()
