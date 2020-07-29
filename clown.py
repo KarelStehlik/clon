@@ -15,7 +15,7 @@ clone_frame.width=270
 clone_frame.height=430
 clone_frame=pyglet.sprite.Sprite(clone_frame)
 
-class platform:
+class platform():
     graphicx=0
     def __init__(self,w,h,x,y):
         global map1

@@ -1,15 +1,27 @@
 from imports import *
+import maps
 class mode_choosing():
     def __init__(self,**kwargs):
-        return
+        self.frames=[]
+        self.Gclones=[]
+        self.Rclones=[]
     def mouse_move(self,x,y,dx,dy):
         return
     def mouse_press(self,x,y,button,modifiers):
         return
+class mapp():
+    def __init__(self,mapp,batch):
+        self.platforms=mapp
+        for e in self.platforms:
+            e.batch(batch)
 class mode_testing():
     def __init__(self,**kw):
-        global testBlocks
         self.mainBatch = pyglet.graphics.Batch()
+        if map in kw:
+            self.mapp=kw["map"]
+        else:
+            self.mapp=random.choice(maps.maps)
+        self.mapp=mapp(self.mapp,self.mainBatch)
         self.fpscount=pyglet.text.Label(x=5,y=5,text="aaa",color=(255,255,255,255))
         self.win=kw["win"]
         self.mousex,self.mousey,self.frames,self.sec,self.mouseheld=0,0,0,0,False
@@ -40,6 +52,8 @@ class mode_testing():
         self.mouseheld=True
     def mouse_release(self,x,y,button,modifiers):
         self.mouseheld=False
+    def resize(self,width,height):
+        pass
 
 class windoo(pyglet.window.Window):
     def start(self):
@@ -58,6 +72,9 @@ class windoo(pyglet.window.Window):
         self.currentMode.key_press(symbol,modifiers)
     def on_mouse_release(self, x, y, button, modifiers):
         self.currentMode.mouse_release(x,y,button,modifiers)
+    def on_resize(self,width,height):
+        super().on_resize(width,height)
+        self.currentMode.resize(width,height)
 place = windoo(resizable=True,caption='test')
 display = pyglet.canvas.Display()
 screen = display.get_default_screen()

@@ -2,12 +2,10 @@ from flask import Flask
 from flask import Response
 from flask import request
 import pyglet
-import math
+import numpy as np
 from pyglet.gl import *
 import time
-from pyglet.window import mouse
 import random
-import copy
 import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
 from pyglet.window import key
@@ -16,5 +14,4 @@ import atexit
 import requests
 import threading
 import images
-import maps
 import os
