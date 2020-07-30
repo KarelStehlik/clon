@@ -1,5 +1,8 @@
 from imports import *
 import maps
+import clones
+def rect_intersect(ax1,ay1,ax2,ay2,bx1,by1,bx2,by2):
+    return ax1<bx2 and bx1<ax2 and ay1<by2 and by1<ay2
 class mode_choosing():
     def __init__(self,**kwargs):
         self.frames=[]
@@ -25,6 +28,9 @@ class mode_testing():
         self.fpscount=pyglet.text.Label(x=5,y=5,text="aaa",color=(255,255,255,255))
         self.win=kw["win"]
         self.mousex,self.mousey,self.frames,self.sec,self.mouseheld=0,0,0,0,False
+        self.clones=[]
+        self.current_clone=random.choice(clones.possible_units)(self.mainBatch,self.mapp,
+                                                                self.clones)
     def mouse_move(self,x, y, dx, dy):
         self.mousex=x
         self.mousey=y
