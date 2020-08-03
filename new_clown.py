@@ -1,8 +1,10 @@
 from imports import *
 import maps
 import clones
+display = pyglet.canvas.Display()
+screen = display.get_default_screen()
 def rect_intersect(ax1,ay1,ax2,ay2,bx1,by1,bx2,by2):
-    return ax1<bx2 and bx1<ax2 and ay1<by2 and by1<ay2
+    return ax1<=bx2 and bx1<=ax2 and ay1<=by2 and by1<=ay2
 class mode_choosing():
     def __init__(self,**kwargs):
         self.frames=[]
@@ -18,25 +20,42 @@ class mapp():
         for e in self.platforms:
             e.batch(batch)
 class mode_testing():
+    global screen
     def __init__(self,**kw):
+        self.win=kw["win"]
         self.mainBatch = pyglet.graphics.Batch()
+        self.background=pyglet.graphics.vertex_list(4,
+                                           ("v2i",[0,0,screen.width,0,screen.width,
+                                                   screen.height,0,screen.height]),
+                                           ("c3B",[100,100,255, 255,0,0, 255,50,50, 0,200,255]))
         if map in kw:
             self.mapp=kw["map"]
         else:
             self.mapp=random.choice(maps.maps)
         self.mapp=mapp(self.mapp,self.mainBatch)
         self.fpscount=pyglet.text.Label(x=5,y=5,text="aaa",color=(255,255,255,255))
-        self.win=kw["win"]
         self.mousex,self.mousey,self.frames,self.sec,self.mouseheld=0,0,0,0,False
+        self.gravity=15
         self.clones=[]
-        self.current_clone=random.choice(clones.possible_units)(self.mainBatch,self.mapp,
-                                                                self.clones)
+        self.bullets=[]
+        self.summon_clone()
+    def summon_clone(self):
+        self.current_clone=random.choice(clones.possible_units)(self.mapp,self.clones,
+                                                                self.bullets,
+                                                                self.mainBatch,0)
+        for e in self.clones:
+            e.start()
     def mouse_move(self,x, y, dx, dy):
         self.mousex=x
         self.mousey=y
     def mouse_drag(self,x, y, dx, dy, button, modifiers):
         self.mouse_move(x,y,dx,dy)
     def tick(self,dt):
+        for e in self.clones:
+            e.move(dt)
+            e.vy-=self.gravity*dt
+        for e in self.bullets:
+            e.move(dt)
         self.win.switch_to()
         self.draw_all()
         self.fpscount.draw()
@@ -51,11 +70,26 @@ class mode_testing():
             self.frames=0
     def draw_all(self):
         self.win.clear()
+        self.background.draw(pyglet.gl.GL_QUADS)
         self.mainBatch.draw()
     def key_press(self,symbol,modifiers):
-        return
+        if symbol==key.A:
+            self.current_clone.a_start()
+        if symbol==key.D:
+            self.current_clone.d_start()
+        if symbol==key.W:
+            self.current_clone.w()
+        if symbol==key.V:
+            for e in self.clones:
+                e.die()
+            self.summon_clone()
+    def key_release(self,symbol,modifiers):
+        if symbol==key.A or symbol==key.D:
+            self.current_clone.move_stop()
     def mouse_press(self,x,y,button,modifiers):
         self.mouseheld=True
+        self.current_clone.shoot(x-self.current_clone.x,y-self.current_clone.y-
+                                 self.current_clone.height/2)
     def mouse_release(self,x,y,button,modifiers):
         self.mouseheld=False
     def resize(self,width,height):
@@ -76,14 +110,16 @@ class windoo(pyglet.window.Window):
         self.currentMode.tick(dt)
     def on_key_press(self,symbol,modifiers):
         self.currentMode.key_press(symbol,modifiers)
+    def on_key_release(self,symbol,modifiers):
+        self.currentMode.key_release(symbol,modifiers)
     def on_mouse_release(self, x, y, button, modifiers):
         self.currentMode.mouse_release(x,y,button,modifiers)
     def on_resize(self,width,height):
         super().on_resize(width,height)
         self.currentMode.resize(width,height)
+    def on_mouse_press(self,x,y,button,modifiers):
+        self.currentMode.mouse_press(x,y,button,modifiers)
 place = windoo(resizable=True,caption='test')
-display = pyglet.canvas.Display()
-screen = display.get_default_screen()
 place.set_size(int(screen.width*0.45),int(screen.height*2/3))
 place.set_location(screen.width//2,int(screen.height*1/6))
 place.start()

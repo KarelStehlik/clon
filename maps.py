@@ -11,8 +11,8 @@ class platform:
         self.y=y
     def batch(self,batch):
         self.pic=pyglet.sprite.Sprite(self.img,self.x,self.y,batch=batch)
-        self.pic.scale_x=self.w/self.pic.width
-        self.pic.scale_y=self.h/self.pic.height
+        self.pic.scale_x=self.w/self.img.width
+        self.pic.scale_y=self.h/self.img.height
     def draw(self):
         self.pic.x=self.graphicx
         self.pic.draw()
