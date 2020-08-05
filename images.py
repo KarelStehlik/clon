@@ -13,8 +13,8 @@ mixerR.width=35
 mixerR.height=60
 for e in [gunmanG,gunmanR,mixerG,mixerR]:
     e.anchor_x=e.width//2
-gunmanG.anchor_x-=9
-gunmanR.anchor_x-=9
+gunmanG.anchor_x-=5
+gunmanR.anchor_x-=5
 
 bullet=pyglet.image.load("imagefolder/Bullet.png")
 buttonG=pyglet.image.load("imagefolder/GreenButton.png")
