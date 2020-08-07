@@ -36,18 +36,18 @@ class clone():
         if self.side==0:
             self.x=10
         else:
-            self.x=1280-10
+            self.x=1270
         self.y=100
         self.sprite=pyglet.sprite.Sprite(self.skin,10,100,batch=self.batch,group=dudeg)
         self.hpbar=pyglet.sprite.Sprite(images.buttonG,self.x,self.y+self.height,batch=self.batch,group=dudeg)
         self.sprite.scale=SPRITE_SIZE_MULT
-        self.hpbar.scale_y=200/self.hpbar.height
         self.hpbar.scale=self.hpbar_scale
+        self.hpbar.scale_y=5/self.hpbar.height
     def start(self):
         if self.side==0:
             self.x=10
         else:
-            self.x=1280-10
+            self.x=1270
         self.y=100
         self.sprite.batch=self.batch
         self.hpbar.batch=self.batch
@@ -209,7 +209,7 @@ class Mixer(clone):
     imageG=images.mixerG
     imageR=images.mixerR
     def __init__(self,mapp,l,bulletlist,batch,side):
-        super().__init__(mapp,l,batch,hp=100,height=70,
+        super().__init__(mapp,l,batch,hp=100,height=60,
                          width=30,spd=300,jump=700,side=side)
         self.dmg=200
         self.lastshot=0
@@ -284,8 +284,8 @@ class Tele(clone):
     imageG=images.teleG
     imageR=images.teleR
     def __init__(self,mapp,l,bulletlist,batch,side):
-        super().__init__(mapp,l,batch,hp=50,height=70,
-                         width=30,spd=200,jump=600,side=side)
+        super().__init__(mapp,l,batch,hp=50,height=80,
+                         width=44,spd=200,jump=600,side=side)
         self.dmg=40
         self.aspd=3
         self.lastshot=0

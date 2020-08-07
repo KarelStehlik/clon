@@ -139,7 +139,6 @@ class mode_testing(mode):
             e.start()
     def mouse_drag(self,x, y, dx, dy, button, modifiers):
         self.mouse_move(x,y,dx,dy)
-        print(self.current_clones[1].x)
     def tick(self,dt):
         self.total_time+=dt
         if self.mouseheld:
