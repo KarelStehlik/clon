@@ -1,7 +1,7 @@
 from imports import *
 import images
 from constants import *
-mappg=pyglet.graphics.OrderedGroup(0)
+mappg=pyglet.graphics.OrderedGroup(1)
 class platform:
     graphicx=0
     def __init__(self,w,h,x,y):
@@ -29,10 +29,12 @@ map1=[platform(20000,20,-600,0),
       platform(20,400,100,20),
       platform(20,300,100,20),
       platform(20,200,100,20),
-      platform(20,100,100,20),]
+      platform(20,100,100,20),
+      platform(200,30,1000,100)]
 map2=[platform(20000,20,-600,0),
        platform(200,30,500,100),
        platform(200,30,200,200),
        platform(200,30,500,300),
-       platform(200,30,200,400)]
+       platform(200,30,200,400),
+      platform(200,30,1000,100)]
 maps=[map1,map2]

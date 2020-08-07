@@ -16,7 +16,14 @@ for e in [gunmanG,gunmanR,mixerG,mixerR]:
 gunmanG.anchor_x-=5
 gunmanR.anchor_x-=5
 
-bullet=pyglet.image.load("imagefolder/Bullet.png")
+bullet=pyglet.resource.image("imagefolder/Bullet.png")
+bullet.width=bullet.height=6
+bullet.anchor_x=bullet.anchor_y=3
+
+BazookaBullet=pyglet.resource.image("imagefolder/BazookaBullet.png")
+BazookaBullet.anchor_x=BazookaBullet.width
+BazookaBullet.anchor_y=BazookaBullet.height//2
+
 buttonG=pyglet.image.load("imagefolder/GreenButton.png")
 buttonR=pyglet.image.load("imagefolder/RedButton.png")
 platform=pyglet.image.load("imagefolder/platform.png")

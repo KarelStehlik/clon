@@ -2,71 +2,19 @@ from imports import *
 import maps
 import clones
 from constants import *
-def rect_intersect(ax1,ay1,ax2,ay2,bx1,by1,bx2,by2):
-    return ax1<=bx2 and bx1<=ax2 and ay1<=by2 and by1<=ay2
-class mode_choosing():
-    def __init__(self,**kwargs):
-        self.frames=[]
-        self.Gclones=[]
-        self.Rclones=[]
-    def mouse_move(self,x,y,dx,dy):
-        return
-    def mouse_press(self,x,y,button,modifiers):
-        return
-class mapp():
-    def __init__(self,mapp,batch):
-        self.platforms=mapp
-        for e in self.platforms:
-            e.batch(batch)
-class mode_testing():
-    global screen
-    def __init__(self,**kw):
-        self.player_side=0
-        self.win=kw["win"]
-        self.mainBatch = pyglet.graphics.Batch()
-        self.background=pyglet.graphics.vertex_list(4,
-                                           ("v2i",[0,0,SCREEN_WIDTH,0,SCREEN_WIDTH,
-                                                   SCREEN_HEIGHT,0,SCREEN_HEIGHT]),
-                                           ("c3B",[100,100,255, 255,0,0, 255,50,50, 0,200,255]))
-        if "map" in kw:
-            self.mapp=kw["map"]
-        else:
-            self.mapp=random.choice(maps.maps)
-        self.mapp=mapp(self.mapp,self.mainBatch)
+class mode():
+    def __init__(self,win,batch):
+        self.batch=batch
+        self.mousex=self.mousey=self.sec=self.frames=0
+        self.mouseheld=False
+        self.win=win
         self.fpscount=pyglet.text.Label(x=5,y=5,text="aaa",color=(255,255,255,255))
-        self.mousex,self.mousey,self.frames,self.sec,self.mouseheld=0,0,0,0,False
-        self.gravity=1000
-        self.clones=[[],[]]
-        self.bullets=[]
-        self.current_clones=[None,None]
-        self.summon_clone()
-    def summon_clone(self):
-        self.current_clones[self.player_side]=random.choice(clones.possible_units)(self.mapp,
-                                                                self.clones,
-                                                                self.bullets,
-                                                                self.mainBatch,
-                                                                self.player_side)
-        for e in self.clones[0]:
-            e.start()
-        for e in self.clones[1]:
-            e.start()
     def mouse_move(self,x, y, dx, dy):
         self.mousex=x
         self.mousey=y
     def mouse_drag(self,x, y, dx, dy, button, modifiers):
         self.mouse_move(x,y,dx,dy)
     def tick(self,dt):
-        if self.mouseheld:
-            a=self.current_clones[self.player_side]
-            a.attempt_shoot(self.mousex-a.x*SPRITE_SIZE_MULT,self.mousey-(a.y+a.height/2)*SPRITE_SIZE_MULT)
-        for e in self.clones[0]:
-            e.move(dt)
-            e.vy-=self.gravity*dt
-        for e in self.clones[1]:
-            e.move(dt)
-            e.vy-=self.gravity*dt
-        for e in self.bullets:
-            e.move(dt)
         self.win.switch_to()
         self.draw_all()
         self.fpscount.draw()
@@ -81,8 +29,120 @@ class mode_testing():
             self.frames=0
     def draw_all(self):
         self.win.clear()
-        self.background.draw(pyglet.gl.GL_QUADS)
-        self.mainBatch.draw()
+        self.batch.draw()
+    def key_press(self,symbol,modifiers):
+        pass
+    def key_release(self,symbol,modifiers):
+        pass
+    def mouse_press(self,x,y,button,modifiers):
+        self.mouseheld=True
+    def mouse_release(self,x,y,button,modifiers):
+        self.mouseheld=False
+    def resize(self,width,height):
+        pass
+def rect_intersect(ax1,ay1,ax2,ay2,bx1,by1,bx2,by2):
+    return ax1<=bx2 and bx1<=ax2 and ay1<=by2 and by1<=ay2
+class mode_choosing(mode):
+    def __init__(self,win,batch,**kwargs):
+        super().__init__(win,batch)
+        self.ccgroup1=pyglet.graphics.OrderedGroup(3)
+        self.ccgroup2=pyglet.graphics.OrderedGroup(4)
+        self.win=win
+        self.batch=batch
+        self.cframes=[]
+        self.imgs=[]
+    def start(self,side):
+        self.win.currentMode=self
+        i=0
+        w=images.cloneFrame.width
+        for e in clones.possible_units:
+            a=pyglet.sprite.Sprite(images.cloneFrame,x=(i*w+30)*SPRITE_SIZE_MULT,
+                                   y=30*SPRITE_SIZE_MULT,batch=self.batch,group=self.ccgroup1)
+            a.scale=SPRITE_SIZE_MULT
+            if side==1:
+                b=pyglet.sprite.Sprite(e.imageR,x=(i*w+30+w*e.imageR.anchor_x/e.imageG.width)*SPRITE_SIZE_MULT,
+                                       y=53*SPRITE_SIZE_MULT,batch=self.batch,group=self.ccgroup2)
+            else:
+                b=pyglet.sprite.Sprite(e.imageG,x=(i*w+30+w*e.imageG.anchor_x/e.imageG.width)*SPRITE_SIZE_MULT,
+                                       y=53*SPRITE_SIZE_MULT,batch=self.batch,group=self.ccgroup2)
+            b.scale=SPRITE_SIZE_MULT*(w/e.imageG.width)*0.8
+            self.cframes.append(a)
+            self.imgs.append(b)
+            i+=1
+    def mouse_press(self,x,y,button,modifiers):
+        super().mouse_press(x,y,button,modifiers)
+        i=0
+        for e in self.cframes:
+            if e.x<x<e.x+e.width and e.y<y<e.y+e.height:
+                self.win.currentMode=self.win.main
+                self.win.main.summon_clone(i)
+                self.end()
+                return
+            i+=1
+    def end(self):
+        for e in self.cframes:
+            e.delete()
+            del e
+        for e in self.imgs:
+            e.delete()
+            del e
+        self.cframes=[]
+        self.imgs=[]
+class mapp():
+    def __init__(self,mapp,batch):
+        self.platforms=mapp
+        for e in self.platforms:
+            e.batch(batch)
+class mode_testing(mode):
+    def __init__(self,win,batch,**kw):
+        super().__init__(win,batch)
+        self.player_side=0
+        bg=pyglet.graphics.OrderedGroup(0)
+        self.background=batch.add(4,pyglet.gl.GL_QUADS,bg,
+                                           ("v2i",[0,0,SCREEN_WIDTH,0,SCREEN_WIDTH,
+                                                   SCREEN_HEIGHT,0,SCREEN_HEIGHT]),
+                                           ("c3B",[100,100,255, 255,0,0, 255,50,50, 0,200,255]))
+        if "map" in kw:
+            self.mapp=kw["map"]
+        else:
+            self.mapp=random.choice(maps.maps)
+        self.mapp=mapp(self.mapp,self.batch)
+        self.gravity=1000
+        self.clones=[[],[]]
+        self.bullets=[]
+        self.current_clones=[None,None]
+        self.summon_clone(0)
+        self.total_time=0
+    def choose_clone(self):
+        self.player_side=1-self.player_side
+        self.win.cc.start(self.player_side)
+    def summon_clone(self,n):
+        self.current_clones[self.player_side]=(clones.possible_units)[n](self.mapp,
+                                                                self.clones,
+                                                                self.bullets,
+                                                                self.batch,
+                                                                self.player_side)
+        for e in self.clones[0]:
+            e.start()
+        for e in self.clones[1]:
+            e.start()
+    def mouse_drag(self,x, y, dx, dy, button, modifiers):
+        self.mouse_move(x,y,dx,dy)
+    def tick(self,dt):
+        self.total_time+=dt
+        if self.mouseheld:
+            a=self.current_clones[self.player_side]
+            a.attempt_shoot([self.mousex-a.x*SPRITE_SIZE_MULT,self.mousey-(a.y+a.height/2)*SPRITE_SIZE_MULT],
+                            self.total_time,dt)
+        for e in self.clones[0]:
+            e.move(dt)
+            e.vy-=self.gravity*dt
+        for e in self.clones[1]:
+            e.move(dt)
+            e.vy-=self.gravity*dt
+        for e in self.bullets:
+            e.move(dt)
+        super().tick(dt)
     def key_press(self,symbol,modifiers):
         if symbol==key.A:
             self.current_clones[self.player_side].a_start()
@@ -93,20 +153,21 @@ class mode_testing():
         if symbol==key.V:
             for e in self.clones[0]+self.clones[1]:
                 e.die()
-            self.summon_clone()
+            self.choose_clone()
+        if symbol==key.M and modifiers==6:
+            self.current_clones[self.player_side].aspd=0
+            self.current_clones[self.player_side].bspd=1000
+            self.current_clones[self.player_side].rang=1500
     def key_release(self,symbol,modifiers):
         if symbol==key.A or symbol==key.D:
             self.current_clones[self.player_side].move_stop()
-    def mouse_press(self,x,y,button,modifiers):
-        self.mouseheld=True
-    def mouse_release(self,x,y,button,modifiers):
-        self.mouseheld=False
-    def resize(self,width,height):
-        pass
 
 class windoo(pyglet.window.Window):
     def start(self):
-        self.currentMode=mode_testing(win=self)
+        self.mainBatch = pyglet.graphics.Batch()
+        self.cc=mode_choosing(self,self.mainBatch)
+        self.main=mode_testing(self,self.mainBatch)
+        self.currentMode=self.main
     def on_mouse_motion(self,x, y, dx, dy):
         self.currentMode.mouse_move(x,y,dx,dy)
     def on_mouse_drag(self,x,y,dx,dy,button,modifiers):
