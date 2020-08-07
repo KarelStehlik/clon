@@ -88,6 +88,17 @@ class mode_choosing(mode):
             del e
         self.cframes=[]
         self.imgs=[]
+    def key_press(self,symbol,modifiers):
+        if symbol in [key.RIGHT,key.D]:
+            w=self.cframes[0].width
+            for i in range(len(self.cframes)):
+                self.cframes[i].x-=w
+                self.imgs[i].x-=w
+        elif symbol in [key.LEFT,key.A]:
+            w=self.cframes[0].width
+            for i in range(len(self.cframes)):
+                self.cframes[i].x+=w
+                self.imgs[i].x+=w
 class mapp():
     def __init__(self,mapp,batch):
         self.platforms=mapp
@@ -154,10 +165,10 @@ class mode_testing(mode):
             for e in self.clones[0]+self.clones[1]:
                 e.die()
             self.choose_clone()
-        if symbol==key.M and modifiers==6:
-            self.current_clones[self.player_side].aspd=0
-            self.current_clones[self.player_side].bspd=1000
-            self.current_clones[self.player_side].rang=1500
+       # if symbol==key.M and modifiers==6:
+       #     self.current_clones[self.player_side].aspd=0
+       #     self.current_clones[self.player_side].bspd=1000
+       #     self.current_clones[self.player_side].rang=1500
     def key_release(self,symbol,modifiers):
         if symbol==key.A or symbol==key.D:
             self.current_clones[self.player_side].move_stop()

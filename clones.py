@@ -38,17 +38,20 @@ class clone():
         else:
             self.x=SCREEN_WIDTH-10
         self.y=100
+        self.sprite=pyglet.sprite.Sprite(self.skin,10,100,batch=self.batch,group=dudeg)
+        self.hpbar=pyglet.sprite.Sprite(images.buttonG,self.x,self.y+self.height,batch=self.batch,group=dudeg)
+        self.sprite.scale=SPRITE_SIZE_MULT
+        self.hpbar.scale_y=200/self.hpbar.height
+        self.hpbar.scale=self.hpbar_scale
     def start(self):
         if self.side==0:
             self.x=10
         else:
             self.x=SCREEN_WIDTH-10
         self.y=100
-        self.sprite=pyglet.sprite.Sprite(self.skin,10,100,batch=self.batch,group=dudeg)
-        self.hpbar=pyglet.sprite.Sprite(images.buttonG,self.x,self.y+self.height,batch=self.batch,group=dudeg)
-        self.sprite.scale=SPRITE_SIZE_MULT
-        self.hpbar.scale_y=200/self.hpbar.height
-        self.hpbar.scale=self.hpbar_scale
+        self.sprite.batch=self.batch
+        self.hpbar.batch=self.batch
+        self.hpbar.scale_x=1
         self.hp=self.maxhp
         self.exists=True
         self.log_completed=0
@@ -127,8 +130,8 @@ class clone():
                 self.log.sort(key=take_second)
             self.vx=0
             self.vy=0
-            self.sprite.delete()
-            self.hpbar.delete()
+            self.sprite.batch=None
+            self.hpbar.batch=None
             self.exists=False
 class Projectile():
     def __init__(self,x,y,vx,vy,enemies,rang,damage,l,batch,model):
@@ -174,8 +177,8 @@ class BasicGuy(clone):
     def __init__(self,mapp,l,bulletlist,batch,side):
         super().__init__(mapp,l,batch,hp=50,height=70,
                          width=30,spd=200,jump=600,side=side)
-        self.dmg=20
-        self.aspd=0.7
+        self.dmg=2
+        self.aspd=0
         self.bspd=400
         self.rang=400
         self.bulletlist=bulletlist
@@ -208,7 +211,7 @@ class Mixer(clone):
     def __init__(self,mapp,l,bulletlist,batch,side):
         super().__init__(mapp,l,batch,hp=100,height=70,
                          width=30,spd=300,jump=700,side=side)
-        self.dmg=100
+        self.dmg=200
         self.lastshot=0
         self.enemies=l[1-self.side]
     def shoot(self,a,dt):
@@ -223,15 +226,15 @@ class Mixer(clone):
             self.shoot([],dt)
 #########################################################################################################
 class Bazooka(clone):
-    imageG=images.gunmanG
+    imageG=images.ZookaG
     imageR=images.gunmanR
     def __init__(self,mapp,l,bulletlist,batch,side):
-        super().__init__(mapp,l,batch,hp=150,height=70,
-                         width=30,spd=200,jump=600,side=side)
+        super().__init__(mapp,l,batch,hp=150,height=65,
+                         width=65,spd=200,jump=600,side=side)
         self.dmg=70
         self.aspd=3
-        self.bspd=300
-        self.rang=700
+        self.bspd=500
+        self.rang=800
         self.bulletlist=bulletlist
         self.lastshot=0
         self.eradius=150
@@ -247,7 +250,7 @@ class Bazooka(clone):
                 vx*=-1
             vy=vx*y/x
         if self.active:
-            self.log.append(["shoot",self.exist_time,[x,y]])
+            self.log.append(["shoot",self.exist_time,a])
         a=BazookaBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
                          self.rang,self.dmg,self.bulletlist,self.batch,self.eradius)
         a.move(0.05)
@@ -276,6 +279,32 @@ class BazookaBullet(Projectile):
                 i.take_damage(self.damage)
         pyglet.clock.unschedule(self.die)
         self.die(0)
+##################################################################################################################
+class Tele(clone):
+    imageG=images.teleG
+    imageR=images.teleR
+    def __init__(self,mapp,l,bulletlist,batch,side):
+        super().__init__(mapp,l,batch,hp=50,height=70,
+                         width=30,spd=200,jump=600,side=side)
+        self.dmg=40
+        self.aspd=3
+        self.lastshot=0
+        self.radius=200
+        self.enemies=l[1-side]
+    def shoot(self,a,dt):
+        if self.active:
+            self.log.append(["shoot",self.exist_time,a])
+        self.x+=a[0]/SPRITE_SIZE_MULT
+        self.y+=a[1]/SPRITE_SIZE_MULT
+        self.sprite.update(x=self.x*SPRITE_SIZE_MULT,y=self.y*SPRITE_SIZE_MULT)
+        for i in self.enemies:
+            if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:
+                i.take_damage(self.dmg)
+    def attempt_shoot(self,a,time,dt):
+        t=time
+        if t-self.lastshot>self.aspd and self.exist_time>3:
+            self.shoot(a,0)
+            self.lastshot=t
 
 
-possible_units=[BasicGuy,Mixer,Bazooka]
+possible_units=[BasicGuy,Mixer,Bazooka,Tele]
