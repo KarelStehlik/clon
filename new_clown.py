@@ -139,7 +139,6 @@ class mode_testing(mode):
             e.start()
     def mouse_drag(self,x, y, dx, dy, button, modifiers):
         self.mouse_move(x,y,dx,dy)
-        print(self.current_clones[1].x)
     def tick(self,dt):
         self.total_time+=dt
         if self.mouseheld:
@@ -201,7 +200,9 @@ class windoo(pyglet.window.Window):
         self.currentMode.resize(width,height)
     def on_mouse_press(self,x,y,button,modifiers):
         self.currentMode.mouse_press(x,y,button,modifiers)
-place = windoo(resizable=True,caption='test',fullscreen=True)
+place = windoo(resizable=True,caption='test')
+place.set_size(int(SCREEN_WIDTH*0.45),int(SCREEN_HEIGHT*2/3))
+place.set_location(SCREEN_WIDTH//2,int(SCREEN_HEIGHT*1/6))
 place.start()
 pyglet.clock.schedule_interval(place.tick,1.0/60)
 while True:

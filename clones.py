@@ -36,7 +36,7 @@ class clone():
         if self.side==0:
             self.x=10
         else:
-            self.x=1280-10
+            self.x=SCREEN_WIDTH-10
         self.y=100
         self.sprite=pyglet.sprite.Sprite(self.skin,10,100,batch=self.batch,group=dudeg)
         self.hpbar=pyglet.sprite.Sprite(images.buttonG,self.x,self.y+self.height,batch=self.batch,group=dudeg)
@@ -47,7 +47,7 @@ class clone():
         if self.side==0:
             self.x=10
         else:
-            self.x=1280-10
+            self.x=SCREEN_WIDTH-10
         self.y=100
         self.sprite.batch=self.batch
         self.hpbar.batch=self.batch
@@ -177,8 +177,8 @@ class BasicGuy(clone):
     def __init__(self,mapp,l,bulletlist,batch,side):
         super().__init__(mapp,l,batch,hp=50,height=70,
                          width=30,spd=200,jump=600,side=side)
-        self.dmg=20
-        self.aspd=0.7
+        self.dmg=2
+        self.aspd=0
         self.bspd=400
         self.rang=400
         self.bulletlist=bulletlist
@@ -227,7 +227,7 @@ class Mixer(clone):
 #########################################################################################################
 class Bazooka(clone):
     imageG=images.ZookaG
-    imageR=images.ZookaG
+    imageR=images.gunmanR
     def __init__(self,mapp,l,bulletlist,batch,side):
         super().__init__(mapp,l,batch,hp=150,height=65,
                          width=65,spd=200,jump=600,side=side)
