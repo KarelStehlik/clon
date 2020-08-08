@@ -14,9 +14,8 @@ class platform:
         self.pic=pyglet.sprite.Sprite(self.img,self.x*SPRITE_SIZE_MULT,
                                       self.y*SPRITE_SIZE_MULT,batch=batch,
                                       group=mappg)
-        self.pic.scale_x=self.w/self.img.width
-        self.pic.scale_y=self.h/self.img.height
-        self.pic.scale=SPRITE_SIZE_MULT
+        self.pic.scale_x=SPRITE_SIZE_MULT*self.w/self.img.width
+        self.pic.scale_y=SPRITE_SIZE_MULT*self.h/self.img.height
     def draw(self):
         self.pic.x=self.graphicx
         self.pic.draw()

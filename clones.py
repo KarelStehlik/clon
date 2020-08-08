@@ -32,7 +32,7 @@ class clone():
         self.exist_time=0
         l[self.side]+=[self]
         self.l=l
-        self.hpbar_scale=SPRITE_SIZE_MULT*self.width/images.buttonG.width
+        self.hpbar_scale=self.width/images.buttonG.width
         if self.side==0:
             self.x=10
         else:
@@ -40,7 +40,6 @@ class clone():
         self.y=100
         self.sprite=pyglet.sprite.Sprite(self.skin,10,100,batch=self.batch,group=dudeg)
         self.hpbar=pyglet.sprite.Sprite(images.buttonG,self.x,self.y+self.height,batch=self.batch,group=dudeg)
-        self.sprite.scale=SPRITE_SIZE_MULT
         self.hpbar.scale=self.hpbar_scale
         self.hpbar.scale_y=5/self.hpbar.height
     def start(self):
@@ -138,7 +137,6 @@ class Projectile():
         self.x,self.y,self.vx,self.vy=x,y,vx,vy
         self.enemies=enemies
         self.sprite=pyglet.sprite.Sprite(model,x,y,batch=batch,group=dudeg)
-        self.sprite.scale=SPRITE_SIZE_MULT
         self.l=l
         self.l.append(self)
         self.rang=rang
@@ -227,12 +225,12 @@ class Mixer(clone):
 #########################################################################################################
 class Bazooka(clone):
     imageG=images.ZookaG
-    imageR=images.ZookaG
+    imageR=images.ZookaR
     def __init__(self,mapp,l,bulletlist,batch,side):
         super().__init__(mapp,l,batch,hp=150,height=65,
                          width=65,spd=200,jump=600,side=side)
         self.dmg=70
-        self.aspd=3
+        self.aspd=0
         self.bspd=500
         self.rang=800
         self.bulletlist=bulletlist
@@ -272,7 +270,6 @@ class BazookaBullet(Projectile):
             self.sprite.rotation=-math.atan(vy/vx)*180/math.pi
         else:
             self.sprite.rotation=180-math.atan(vy/vx)*180/math.pi
-        self.sprite.scale=SPRITE_SIZE_MULT*40/600
     def on_collision(self,e):
         for i in self.enemies:
             if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:

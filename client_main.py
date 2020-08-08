@@ -1,3 +1,20 @@
+from PodSixNet.Connection import connection,ConnectionListener
+from imports import *
+import maps
+import clones
+from constants import *
+connection.DoConnect(('127.0.0.1', 5071))
+class MyNetworkListener(ConnectionListener):
+    def __init__(self,*args,**kwargs):
+        super().__init__()
+        self.start=False
+    def Network_start(self,data):
+        self.start=True
+    def Network_myaction(self, data):
+        print(data["a"])
+nwl=MyNetworkListener()
+connection.Send({"action": "myaction", "a": 123})
+
 from imports import *
 import maps
 import clones
@@ -202,5 +219,14 @@ class windoo(pyglet.window.Window):
 place = windoo(resizable=True,caption='test',fullscreen=True)
 place.start()
 pyglet.clock.schedule_interval(place.tick,1.0/60)
+
+while not nwl.start:
+    connection.Pump()
+    pyglet.clock.tick()
+    nwl.Pump()
+place.currentMode=place.main
 while True:
     pyglet.clock.tick()
+    connection.Pump()
+    nwl.Pump()
+    time.sleep(0.0001)
