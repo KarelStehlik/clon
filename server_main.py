@@ -121,7 +121,6 @@ class mode_choosing():
         pass
 while len(channels.cn)<2:
     srvr.Pump()
-channels.send_both({"action":"start_game"})
 mc=mode_choosing()
 mt=mode_testing(mapp=mappNum)
 current_mode=mt

@@ -4,7 +4,7 @@ import maps
 import clones_client as clones
 from constants import * 
 connection.DoConnect(('127.0.0.1', 5071))
-connection.Send({"action":"test","dat":"l"})
+side=0
 class MyNetworkListener(ConnectionListener):
     def __init__(self,*args,**kwargs):
         super().__init__()
@@ -12,8 +12,6 @@ class MyNetworkListener(ConnectionListener):
     def Network_assign_side(self,data):
         global side
         side=data["s"]
-        print(side)
-        place.main.player_side=side
     def Network_start(self,data):
         self.start=True
         place.main=place.current_mode=mode_testing(place,place.mainBatch,mapp=data["mapp"])
@@ -43,7 +41,6 @@ class MyNetworkListener(ConnectionListener):
         place.main.current_clones[0].update_pos(data["x0"],data["y0"])
         place.main.current_clones[1].update_pos(data["x1"],data["y1"])
 nwl=MyNetworkListener()
-print(connection.Connected())
 class mode():
     def __init__(self,win,batch):
         self.batch=batch
@@ -140,15 +137,16 @@ class mode_choosing(mode):
             for i in range(len(self.cframes)):
                 self.cframes[i].x+=w
                 self.imgs[i].x+=w
-class mapp():
-    def __init__(self,mapp,batch):
-        self.platforms=mapp
-        for e in self.platforms:
-            e.batch(batch)
+class mappClass():
+    def __init__(self,inp,batch):
+        self.platforms=[]
+        for e in inp:
+            self.platforms.append(e.batch(batch))
 class mode_testing(mode):
     def __init__(self,win,batch,**kw):
         super().__init__(win,batch)
         self.player_side=0
+        self.batch=batch
         bg=pyglet.graphics.OrderedGroup(0)
         self.background=batch.add(4,pyglet.gl.GL_QUADS,bg,
                                            ("v2i",[0,0,SCREEN_WIDTH,0,SCREEN_WIDTH,
@@ -158,12 +156,14 @@ class mode_testing(mode):
             self.mapp=maps.maps[kw["mapp"]]
         else:
             self.mapp=random.choice(maps.maps)
-        self.mapp=mapp(self.mapp,self.batch)
         self.gravity=1000
         self.clones=[[],[]]
         self.bullets=[]
         self.current_clones=[None,None]
         self.total_time=0
+        print("a")
+        self.mapp=mappClass(self.mapp,batch)
+        print("a")
     def start_round(self):
         self.win.current_mode=self
         for e in self.clones[0]:
@@ -240,7 +240,6 @@ class windoo(pyglet.window.Window):
 place = windoo(resizable=True,caption='test',fullscreen=False)
 place.start()
 pyglet.clock.schedule_interval(place.tick,1.0/60)
-side=0
 
 while not nwl.start:
     connection.Pump()
@@ -248,5 +247,5 @@ while not nwl.start:
     nwl.Pump()
 while True:
     connection.Pump()
-    nwl.Pump()
     pyglet.clock.tick()
+    nwl.Pump()

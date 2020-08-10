@@ -5,17 +5,22 @@ mappg=pyglet.graphics.OrderedGroup(1)
 class platform:
     graphicx=0
     def __init__(self,w,h,x,y):
-        self.img=images.platform
         self.w=w
         self.h=h
         self.x=x
         self.y=y
-    def batch(self,batch):
-        self.pic=pyglet.sprite.Sprite(self.img,self.x*SPRITE_SIZE_MULT,
-                                      self.y*SPRITE_SIZE_MULT,batch=batch,
+        self.pic=0
+    def create_image(self,batch):
+        global mappg
+        self.pic=pyglet.sprite.Sprite(images.platform,x=self.x*SPRITE_SIZE_MULT,
+                                      y=self.y*SPRITE_SIZE_MULT,batch=batch,
                                       group=mappg)
-        self.pic.scale_x=SPRITE_SIZE_MULT*self.w/self.img.width
-        self.pic.scale_y=SPRITE_SIZE_MULT*self.h/self.img.height
+        self.pic.scale_x=SPRITE_SIZE_MULT*self.w/images.platform.width
+        self.pic.scale_y=SPRITE_SIZE_MULT*self.h/images.platform.height
+    def batch(self,batch):
+        a=platform(self.w,self.h,self.x,self.y)
+        a.create_image(batch)
+        return a
     def draw(self):
         self.pic.x=self.graphicx
         self.pic.draw()
