@@ -25,9 +25,8 @@ class player_channel(Channel):
     def Network_shoot(self,data):
         mt.current_clones[self.side].add_shoot(data["a"])
     def Network_chosen(self,data):
-        print(self.side,data["choice"])
         mc.make_choice(self.side,data["choice"])
-
+mappNum=0
 class cw_server(Server):
     channelClass = player_channel
     def Connected(self, channel, addr):
@@ -38,8 +37,10 @@ class cw_server(Server):
             channels.cn+=[channel]
             n+=1
         if n==2:
+            global mappNum
+            mappNum=random.randint(0,len(maps.maps)-1)
             channels.send_both({"action":"start",
-                                "mapp":random.randint(0,len(maps.maps)-1)})
+                                "mapp":mappNum})
 
 srvr=cw_server()
 print(srvr.addr)
@@ -49,8 +50,8 @@ class mapp():
         self.platforms=mapp
 class mode_testing():
     def __init__(self,**kw):
-        if "map" in kw:
-            self.mapp=kw["map"]
+        if "mapp" in kw:
+            self.mapp=maps.maps[kw["mapp"]]
         else:
             self.mapp=random.choice(maps.maps)
         self.mapp=mapp(self.mapp)
@@ -97,6 +98,13 @@ class mode_testing():
                 e.move(dt)
             if (not self.current_clones[1].exists) or (not self.current_clones[0].exists):
                 self.end_round()
+            channels.send_both({"action":"update",
+                                "hp0":self.current_clones[0].hp,
+                                "hp1":self.current_clones[1].hp,
+                                "x0":self.current_clones[0].x,
+                                "y0":self.current_clones[0].y,
+                                "x1":self.current_clones[1].x,
+                                "y1":self.current_clones[1].y})
 class mode_choosing():
     def __init__(self):
         self.choices=[-1,-1]
@@ -115,10 +123,10 @@ while len(channels.cn)<2:
     srvr.Pump()
 channels.send_both({"action":"start_game"})
 mc=mode_choosing()
-mt=mode_testing()
+mt=mode_testing(mapp=mappNum)
 current_mode=mt
 pyglet.clock.schedule_interval(current_mode.tick,1.0/60)
-print("cn")
+print("starting game")
 t=1
 while True:
     t+=1

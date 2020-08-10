@@ -37,6 +37,11 @@ class MyNetworkListener(ConnectionListener):
         place.cc.start(side)
     def Network_shoot(self,data):
         place.main.current_clones[data["side"]].shoot(data["a"],0)
+    def Network_update(self,data):
+        place.main.current_clones[0].update_health(data["hp0"])
+        place.main.current_clones[1].update_health(data["hp1"])
+        place.main.current_clones[0].update_pos(data["x0"],data["y0"])
+        place.main.current_clones[1].update_pos(data["x1"],data["y1"])
 nwl=MyNetworkListener()
 print(connection.Connected())
 class mode():

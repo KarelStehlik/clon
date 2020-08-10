@@ -55,12 +55,16 @@ class clone():
         self.exists=True
         self.log_completed=0
         self.exist_time=0
-    def take_damage(self,amount):
-        self.hp-=amount
+    def update_health(self,health):
+        self.hp=health
         if self.hp<=0:
             self.die()
             return
         self.hpbar.scale_x=self.hp/self.maxhp
+    def update_pos(self,x,y):
+        self.sprite.update(x=x*SPRITE_SIZE_MULT,y=y*SPRITE_SIZE_MULT)
+        self.hpbar.update(x=(x-self.width//2)*SPRITE_SIZE_MULT,y=(y+self.height)*SPRITE_SIZE_MULT)
+        self.x,self.y=x,y
     def on_ground(self):
         for e in self.mapp.platforms:
             if self.y==e.y+e.h and e.x<self.x<e.x+e.w:
@@ -99,20 +103,6 @@ class clone():
                             return
                     else:
                         break
-            self.x+=self.vx*dt
-            ycap=0
-            for e in self.mapp.platforms:
-                if self.y>e.y and self.vy<0 and rect_intersect(self.x,
-                                                               self.y+self.vy*dt,
-                                                               self.x,
-                                                               self.y,
-                                                               e.x,e.y+e.h,e.x+e.w,e.y+e.h):
-                    ycap=max(e.y+e.h,ycap)
-            self.y=max(ycap,self.y+self.vy*dt)
-            if not ycap==0:
-                self.vy=0
-            self.sprite.update(x=self.x*SPRITE_SIZE_MULT,y=self.y*SPRITE_SIZE_MULT)
-            self.hpbar.update(x=(self.x-self.width//2)*SPRITE_SIZE_MULT,y=(self.y+self.height)*SPRITE_SIZE_MULT)
     def die(self):
         if self.exists:
             if self.active:
@@ -157,7 +147,6 @@ class BasicGuyBullet(Projectile):
     def __init__(self,x,y,vx,vy,enemies,rang,damage,l,batch):
         super().__init__(x,y,vx,vy,enemies,rang,damage,l,batch,images.bullet)
     def on_collision(self,e):
-        e.take_damage(self.damage)
         pyglet.clock.unschedule(self.die)
         self.die(0)
 class BasicGuy(clone):
@@ -203,15 +192,9 @@ class Mixer(clone):
         self.lastshot=0
         self.enemies=l[1-self.side]
     def shoot(self,a,dt):
-        for e in self.enemies:
-            if e.exists and e.x-e.width/2<self.x<e.x+e.width/2 and e.y<self.y+self.height/2<e.y+e.height:
-                e.take_damage(self.dmg*dt)
+        pass
     def can_shoot(self):
         return False
-    def move(self,dt):
-        super().move(dt)
-        if self.exists:
-            self.shoot([],dt)
 #########################################################################################################
 class Bazooka(clone):
     imageG=images.ZookaG
@@ -260,9 +243,6 @@ class BazookaBullet(Projectile):
         else:
             self.sprite.rotation=180-math.atan(vy/vx)*180/math.pi
     def on_collision(self,e):
-        for i in self.enemies:
-            if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:
-                i.take_damage(self.damage)
         pyglet.clock.unschedule(self.die)
         self.die(0)
 ##################################################################################################################
@@ -281,9 +261,6 @@ class Tele(clone):
         self.x+=a[0]/SPRITE_SIZE_MULT
         self.y+=a[1]/SPRITE_SIZE_MULT
         self.sprite.update(x=self.x*SPRITE_SIZE_MULT,y=self.y*SPRITE_SIZE_MULT)
-        for i in self.enemies:
-            if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:
-                i.take_damage(self.dmg)
     def can_shoot(self):
         t=self.exist_time
         if t-self.lastshot>self.aspd:
