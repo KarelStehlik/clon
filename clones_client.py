@@ -189,8 +189,8 @@ class BasicGuy(clone):
     def can_shoot(self):
         t=self.exist_time
         if t-self.lastshot>self.aspd:
-            return True
             self.lastshot=t
+            return True
         return False
 ###########################################################################################################
 class Mixer(clone):
@@ -243,8 +243,8 @@ class Bazooka(clone):
     def can_shoot(self):
         t=self.exist_time
         if t-self.lastshot>self.aspd:
-            return True
             self.lastshot=t
+            return True
         return False
 class BazookaBullet(Projectile):
     def __init__(self,x,y,vx,vy,enemies,rang,damage,l,batch,radius):
@@ -287,8 +287,8 @@ class Tele(clone):
     def can_shoot(self):
         t=self.exist_time
         if t-self.lastshot>self.aspd:
-            return True
             self.lastshot=t
+            return True
         return False
 
 

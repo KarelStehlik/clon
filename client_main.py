@@ -34,6 +34,8 @@ class MyNetworkListener(ConnectionListener):
         place.main.current_clones[1].die()
         place.main.current_clones[0].log=data["log0"]
         place.main.current_clones[1].log=data["log1"]
+    def Network_shoot(self,data):
+        place.main.current_clones[data["side"]].shoot(data["a"],0)
 nwl=MyNetworkListener()
 print(connection.Connected())
 class mode():

@@ -4,6 +4,7 @@ import time
 import numpy as np
 import math
 from constants import *
+import serverchannels as channels
 dudeg=pyglet.graphics.OrderedGroup(2)
 def rect_intersect(ax1,ay1,ax2,ay2,bx1,by1,bx2,by2):
     return ax1<=bx2 and bx1<=ax2 and ay1<=by2 and by1<=ay2
@@ -32,6 +33,9 @@ class clone():
         else:
             self.x=1270
         self.y=100
+        self.shoot_queue=[]
+    def add_shoot(self,a):
+        self.shoot_queue.append(a)
     def start(self):
         if self.side==0:
             self.x=10
@@ -72,7 +76,10 @@ class clone():
     def move(self,dt):
         if self.exists:
             self.exist_time+=dt
-            if not self.active:
+            if self.active:
+                if len(self.shoot_queue)>0 and self.can_shoot():
+                    self.shoot(self.shoot_queue.pop(0),0)
+            else:
                 for e in self.log[self.log_completed::]:
                     if e[1]<self.exist_time:
                         self.log_completed+=1
@@ -157,6 +164,9 @@ class BasicGuy(clone):
         self.bulletlist=bulletlist
         self.lastshot=0
     def shoot(self,a,dt):
+        if self.active:
+            channels.send_both({"action":"shoot","a":a,"side":self.side})
+            self.log.append(["shoot",self.exist_time,a])
         x=a[0]
         y=a[1]
         if x==0:
@@ -167,16 +177,15 @@ class BasicGuy(clone):
             if x<0:
                 vx*=-1
             vy=vx*y/x
-        if self.active:
-            self.log.append(["shoot",self.exist_time,[x,y]])
         a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
                          self.rang,self.dmg,self.bulletlist)
         a.move(0.05)
-    def attempt_shoot(self,a,time,dt):
-        t=time
+    def can_shoot(self):
+        t=self.exist_time
         if t-self.lastshot>self.aspd:
-            self.shoot(a,dt)
             self.lastshot=t
+            return True
+        return False
 ###########################################################################################################
 class Mixer(clone):
     def __init__(self,mapp,l,bulletlist,side):
@@ -189,8 +198,8 @@ class Mixer(clone):
         for e in self.enemies:
             if e.exists and e.x-e.width/2<self.x<e.x+e.width/2 and e.y<self.y+self.height/2<e.y+e.height:
                 e.take_damage(self.dmg*dt)
-    def attempt_shoot(self,a,time,dt):
-        pass
+    def can_shoot(self):
+        return False
     def move(self,dt):
         super().move(dt)
         if self.exists:
@@ -208,6 +217,9 @@ class Bazooka(clone):
         self.lastshot=0
         self.eradius=150
     def shoot(self,a,dt):
+        if self.active:
+            channels.send_both({"action":"shoot","a":a,"side":self.side})
+            self.log.append(["shoot",self.exist_time,a])
         x=a[0]
         y=a[1]
         if x==0:
@@ -218,16 +230,15 @@ class Bazooka(clone):
             if x<0:
                 vx*=-1
             vy=vx*y/x
-        if self.active:
-            self.log.append(["shoot",self.exist_time,a])
         a=BazookaBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
                          self.rang,self.dmg,self.bulletlist,self.eradius)
         a.move(0.05)
-    def attempt_shoot(self,a,time,dt):
-        t=time
+    def can_shoot(self):
+        t=self.exist_time
         if t-self.lastshot>self.aspd:
-            self.shoot(a,0)
             self.lastshot=t
+            return True
+        return False
 class BazookaBullet(Projectile):
     def __init__(self,x,y,vx,vy,enemies,rang,damage,l,radius):
         super().__init__(x,y,vx,vy,enemies,rang,damage,l)
@@ -250,17 +261,19 @@ class Tele(clone):
         self.enemies=l[1-side]
     def shoot(self,a,dt):
         if self.active:
+            channels.send_both({"action":"shoot","a":a,"side":self.side})
             self.log.append(["shoot",self.exist_time,a])
         self.x+=a[0]/SPRITE_SIZE_MULT
         self.y+=a[1]/SPRITE_SIZE_MULT
         for i in self.enemies:
             if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:
                 i.take_damage(self.dmg)
-    def attempt_shoot(self,a,time,dt):
-        t=time
-        if t-self.lastshot>self.aspd and self.exist_time>3:
-            self.shoot(a,0)
+    def can_shoot(self):
+        t=self.exist_time
+        if t-self.lastshot>self.aspd:
             self.lastshot=t
+            return True
+        return False
 
 
 possible_units=[BasicGuy,Mixer,Bazooka,Tele]
