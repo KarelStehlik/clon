@@ -67,22 +67,14 @@ class clone():
                 return True
         return False
     def a_start(self):
-        if self.active:
-            self.log.append(["a",self.exist_time])
         self.vx=-self.spd
         self.sprite.scale_x=-1
     def move_stop(self):
-        if self.active:
-            self.log.append(["stop",self.exist_time])
         self.vx=0
     def d_start(self):
-        if self.active:
-            self.log.append(["d",self.exist_time])
         self.vx=self.spd
         self.sprite.scale_x=1
     def w(self):
-        if self.active:
-            self.log.append(["w",self.exist_time])
         if self.on_ground():
             self.vy=self.jump
     def move(self,dt):
@@ -124,7 +116,6 @@ class clone():
     def die(self):
         if self.exists:
             if self.active:
-                self.log.append(["die",self.exist_time])
                 self.active=False
                 self.log.sort(key=take_second)
             self.vx=0
@@ -192,16 +183,15 @@ class BasicGuy(clone):
             if x<0:
                 vx*=-1
             vy=vx*y/x
-        if self.active:
-            self.log.append(["shoot",self.exist_time,[x,y]])
         a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
                          self.rang,self.dmg,self.bulletlist,self.batch)
         a.move(0.05)
-    def attempt_shoot(self,a,time,dt):
-        t=time
+    def can_shoot(self):
+        t=self.exist_time
         if t-self.lastshot>self.aspd:
-            self.shoot(a,dt)
+            return True
             self.lastshot=t
+        return False
 ###########################################################################################################
 class Mixer(clone):
     imageG=images.mixerG
@@ -216,8 +206,8 @@ class Mixer(clone):
         for e in self.enemies:
             if e.exists and e.x-e.width/2<self.x<e.x+e.width/2 and e.y<self.y+self.height/2<e.y+e.height:
                 e.take_damage(self.dmg*dt)
-    def attempt_shoot(self,a,time,dt):
-        pass
+    def can_shoot(self):
+        return False
     def move(self,dt):
         super().move(dt)
         if self.exists:
@@ -230,7 +220,7 @@ class Bazooka(clone):
         super().__init__(mapp,l,batch,hp=150,height=65,
                          width=65,spd=200,jump=600,side=side)
         self.dmg=70
-        self.aspd=3
+        self.aspd=0
         self.bspd=500
         self.rang=800
         self.bulletlist=bulletlist
@@ -247,16 +237,15 @@ class Bazooka(clone):
             if x<0:
                 vx*=-1
             vy=vx*y/x
-        if self.active:
-            self.log.append(["shoot",self.exist_time,a])
         a=BazookaBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
                          self.rang,self.dmg,self.bulletlist,self.batch,self.eradius)
         a.move(0.05)
-    def attempt_shoot(self,a,time,dt):
-        t=time
+    def can_shoot(self):
+        t=self.exist_time
         if t-self.lastshot>self.aspd:
-            self.shoot(a,0)
+            return True
             self.lastshot=t
+        return False
 class BazookaBullet(Projectile):
     def __init__(self,x,y,vx,vy,enemies,rang,damage,l,batch,radius):
         super().__init__(x,y,vx,vy,enemies,rang,damage,l,batch,images.BazookaBullet)
@@ -289,19 +278,18 @@ class Tele(clone):
         self.radius=200
         self.enemies=l[1-side]
     def shoot(self,a,dt):
-        if self.active:
-            self.log.append(["shoot",self.exist_time,a])
         self.x+=a[0]/SPRITE_SIZE_MULT
         self.y+=a[1]/SPRITE_SIZE_MULT
         self.sprite.update(x=self.x*SPRITE_SIZE_MULT,y=self.y*SPRITE_SIZE_MULT)
         for i in self.enemies:
             if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:
                 i.take_damage(self.dmg)
-    def attempt_shoot(self,a,time,dt):
-        t=time
-        if t-self.lastshot>self.aspd and self.exist_time>3:
-            self.shoot(a,0)
+    def can_shoot(self):
+        t=self.exist_time
+        if t-self.lastshot>self.aspd:
+            return True
             self.lastshot=t
+        return False
 
 
 possible_units=[BasicGuy,Mixer,Bazooka,Tele]
