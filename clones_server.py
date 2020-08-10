@@ -210,7 +210,7 @@ class Bazooka(clone):
         super().__init__(mapp,l,hp=150,height=65,
                          width=65,spd=200,jump=600,side=side)
         self.dmg=70
-        self.aspd=0
+        self.aspd=3
         self.bspd=500
         self.rang=800
         self.bulletlist=bulletlist

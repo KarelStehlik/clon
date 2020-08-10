@@ -34,6 +34,7 @@ class MyNetworkListener(ConnectionListener):
         place.main.current_clones[1].die()
         place.main.current_clones[0].log=data["log0"]
         place.main.current_clones[1].log=data["log1"]
+        place.cc.start(side)
     def Network_shoot(self,data):
         place.main.current_clones[data["side"]].shoot(data["a"],0)
 nwl=MyNetworkListener()
@@ -88,7 +89,7 @@ class mode_choosing(mode):
         self.cframes=[]
         self.imgs=[]
     def start(self,side):
-        self.win.currentMode=self
+        self.win.current_mode=self
         i=0
         w=images.cloneFrame.width
         for e in clones.possible_units:
@@ -109,12 +110,12 @@ class mode_choosing(mode):
         i=0
         for e in self.cframes:
             if e.x<x<e.x+e.width and e.y<y<e.y+e.height:
-                self.win.currentMode=self.win.main
-                self.win.main.summon_clone(i)
+                connection.Send({"action":"chosen","choice":i})
                 self.end()
                 return
             i+=1
     def end(self):
+        self.win.currentMode=self.win.main
         for e in self.cframes:
             e.delete()
             del e
@@ -159,13 +160,11 @@ class mode_testing(mode):
         self.current_clones=[None,None]
         self.total_time=0
     def start_round(self):
+        self.win.current_mode=self
         for e in self.clones[0]:
             e.start()
         for e in self.clones[1]:
             e.start()
-    def choose_clone(self):
-        self.player_side=1-self.player_side
-        self.win.cc.start(self.player_side)
     def summon_clone(self,n,side):
         self.current_clones[side]=(clones.possible_units)[n](self.mapp,
                                                                 self.clones,
@@ -177,7 +176,8 @@ class mode_testing(mode):
     def tick(self,dt):
         self.total_time+=dt
         if self.mouseheld:
-            a=self.current_clones[self.player_side]
+            global side
+            a=self.current_clones[side]
             if a.can_shoot():
                 connection.Send({"action": "shoot",
                                  "a": [self.mousex-a.x*SPRITE_SIZE_MULT,
@@ -198,10 +198,6 @@ class mode_testing(mode):
             connection.Send({"action": "D"})
         if symbol==key.W:
             connection.Send({"action": "jump"})
-        if symbol==key.V:
-            for e in self.clones[0]+self.clones[1]:
-                e.die()
-            self.choose_clone()
     def key_release(self,symbol,modifiers):
         if symbol==key.A or symbol==key.D:
             connection.Send({"action": "stop"})

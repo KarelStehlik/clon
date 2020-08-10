@@ -11,19 +11,22 @@ class player_channel(Channel):
     def start(self,side):
         self.side=side
     def Network_stop(self,data):
-        current_mode.current_clones[self.side].move_stop()
+        mt.current_clones[self.side].move_stop()
         channels.send_both({"action":"stop","side":self.side})
     def Network_A(self,data):
-        current_mode.current_clones[self.side].a_start()
+        mt.current_clones[self.side].a_start()
         channels.send_both({"action":"A","side":self.side})
     def Network_D(self,data):
-        current_mode.current_clones[self.side].d_start()
+        mt.current_clones[self.side].d_start()
         channels.send_both({"action":"D","side":self.side})
     def Network_jump(self,data):
-        current_mode.current_clones[self.side].w()
+        mt.current_clones[self.side].w()
         channels.send_both({"action":"jump","side":self.side})
     def Network_shoot(self,data):
-        current_mode.current_clones[self.side].add_shoot(data["a"])
+        mt.current_clones[self.side].add_shoot(data["a"])
+    def Network_chosen(self,data):
+        print(self.side,data["choice"])
+        mc.make_choice(self.side,data["choice"])
 
 class cw_server(Server):
     channelClass = player_channel
@@ -59,11 +62,12 @@ class mode_testing():
         self.summon_clones(0,1)
     def end_round(self):
         self.running=False
+        global current_mode
+        current_mode=mode_choosing()
         self.current_clones[0].die()
         self.current_clones[1].die()
         channels.send_both({"action":"endround","log0":self.current_clones[0].log,
                    "log1":self.current_clones[1].log})
-        self.summon_clones(1,1)
     def summon_clones(self,c0,c1):
         self.current_clones[0]=(clones.possible_units)[c0](self.mapp,
                                                             self.clones,
@@ -93,11 +97,26 @@ class mode_testing():
                 e.move(dt)
             if (not self.current_clones[1].exists) or (not self.current_clones[0].exists):
                 self.end_round()
-
+class mode_choosing():
+    def __init__(self):
+        self.choices=[-1,-1]
+        global mc
+        mc=self
+    def make_choice(self,side,c):
+        if 0<=c<=len(clones.possible_units):
+            self.choices[side]=int(c)
+            if not self.choices[1-side] == -1:
+                global current_mode,mt
+                current_mode=mt
+                current_mode.summon_clones(self.choices[0],self.choices[1])
+    def tick(self,dt):
+        pass
 while len(channels.cn)<2:
     srvr.Pump()
 channels.send_both({"action":"start_game"})
-current_mode=mode_testing()
+mc=mode_choosing()
+mt=mode_testing()
+current_mode=mt
 pyglet.clock.schedule_interval(current_mode.tick,1.0/60)
 print("cn")
 t=1
