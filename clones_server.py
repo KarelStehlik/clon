@@ -46,6 +46,7 @@ class clone():
         self.exists=True
         self.log_completed=0
         self.exist_time=0
+        print(self.x,self.y)
     def take_damage(self,amount):
         self.hp-=amount
         if self.hp<=0:
@@ -259,21 +260,33 @@ class Tele(clone):
         self.lastshot=0
         self.radius=200
         self.enemies=l[1-side]
+        self.phase=255
     def shoot(self,a,dt):
         if self.active:
             channels.send_both({"action":"shoot","a":a,"side":self.side})
             self.log.append(["shoot",self.exist_time,a])
         self.x+=a[0]/SPRITE_SIZE_MULT
         self.y+=a[1]/SPRITE_SIZE_MULT
-        for i in self.enemies:
-            if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:
-                i.take_damage(self.dmg)
+        self.phase=0
     def can_shoot(self):
         t=self.exist_time
         if t-self.lastshot>self.aspd:
             self.lastshot=t
             return True
         return False
+    def move(self,dt):
+        if (not self.phase==255) and self.exists:
+            self.exist_time+=dt
+            self.phase=min(self.phase+100*dt,255)
+            if self.phase==255:
+                for i in self.enemies:
+                    if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:
+                        i.take_damage(self.dmg)
+        else:
+            super().move(dt)
+    def die(self):
+        self.phase=255
+        super().die()
 
 
 possible_units=[BasicGuy,Mixer,Bazooka,Tele]

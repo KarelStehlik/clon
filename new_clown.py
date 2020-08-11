@@ -100,9 +100,9 @@ class mode_choosing(mode):
                 self.imgs[i].x+=w
 class mapp():
     def __init__(self,mapp,batch):
-        self.platforms=mapp
-        for e in self.platforms:
-            e.batch(batch)
+        self.platforms=[]
+        for e in mapp:
+            self.platforms.append(e.batch(batch))
 class mode_testing(mode):
     def __init__(self,win,batch,**kw):
         super().__init__(win,batch)
@@ -199,7 +199,7 @@ class windoo(pyglet.window.Window):
         self.currentMode.resize(width,height)
     def on_mouse_press(self,x,y,button,modifiers):
         self.currentMode.mouse_press(x,y,button,modifiers)
-place = windoo(resizable=True,caption='test',fullscreen=True)
+place = windoo(resizable=True,caption='test',fullscreen=False)
 place.start()
 pyglet.clock.schedule_interval(place.tick,1.0/60)
 while True:

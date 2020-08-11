@@ -61,6 +61,9 @@ class clone():
             self.die()
             return
         self.hpbar.scale_x=self.hp/self.maxhp
+    def take_damage(self,amount,source):
+        if not self.active:
+            self.update_health(self.hp-amount)
     def update_pos(self,x,y):
         self.sprite.update(x=x*SPRITE_SIZE_MULT,y=y*SPRITE_SIZE_MULT)
         self.hpbar.update(x=(x-self.width//2)*SPRITE_SIZE_MULT,y=(y+self.height)*SPRITE_SIZE_MULT)
@@ -103,6 +106,19 @@ class clone():
                             return
                     else:
                         break
+                self.x+=self.vx*dt
+                ycap=0
+                for e in self.mapp.platforms:
+                    if self.y>e.y and self.vy<0 and rect_intersect(self.x,
+                                                                   self.y+self.vy*dt,
+                                                                   self.x,
+                                                                   self.y,
+                                                                   e.x,e.y+e.h,e.x+e.w,e.y+e.h):
+                        ycap=max(e.y+e.h,ycap)
+                self.y=max(ycap,self.y+self.vy*dt)
+                if not ycap==0:
+                    self.vy=0
+            self.update_pos(self.x,self.y)
     def die(self):
         if self.exists:
             if self.active:
@@ -147,6 +163,7 @@ class BasicGuyBullet(Projectile):
     def __init__(self,x,y,vx,vy,enemies,rang,damage,l,batch):
         super().__init__(x,y,vx,vy,enemies,rang,damage,l,batch,images.bullet)
     def on_collision(self,e):
+        e.take_damage(self.damage,self)
         pyglet.clock.unschedule(self.die)
         self.die(0)
 class BasicGuy(clone):
@@ -192,9 +209,15 @@ class Mixer(clone):
         self.lastshot=0
         self.enemies=l[1-self.side]
     def shoot(self,a,dt):
-        pass
+        for e in self.enemies:
+            if e.exists and e.x-e.width/2<self.x<e.x+e.width/2 and e.y<self.y+self.height/2<e.y+e.height:
+                e.take_damage(self.dmg*dt,self)
     def can_shoot(self):
         return False
+    def move(self,dt):
+        super().move(dt)
+        if self.exists:
+            self.shoot([],dt)
 #########################################################################################################
 class Bazooka(clone):
     imageG=images.ZookaG
@@ -243,6 +266,9 @@ class BazookaBullet(Projectile):
         else:
             self.sprite.rotation=180-math.atan(vy/vx)*180/math.pi
     def on_collision(self,e):
+        for i in self.enemies:
+            if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:
+                i.take_damage(self.damage,self)
         pyglet.clock.unschedule(self.die)
         self.die(0)
 ##################################################################################################################
@@ -257,16 +283,32 @@ class Tele(clone):
         self.lastshot=0
         self.radius=200
         self.enemies=l[1-side]
+        self.phase=255
     def shoot(self,a,dt):
         self.x+=a[0]/SPRITE_SIZE_MULT
         self.y+=a[1]/SPRITE_SIZE_MULT
-        self.sprite.update(x=self.x*SPRITE_SIZE_MULT,y=self.y*SPRITE_SIZE_MULT)
+        self.phase=0
+        self.update_pos(self.x,self.y)
     def can_shoot(self):
         t=self.exist_time
         if t-self.lastshot>self.aspd:
             self.lastshot=t
             return True
         return False
+    def move(self,dt):
+        if self.phase != 255:
+            self.exist_time+=dt
+            self.phase=min(self.phase+100*dt,255)
+            self.sprite.opacity=self.phase
+            if self.phase==255:
+                for i in self.enemies:
+                    if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:
+                        i.take_damage(self.dmg,self)
+        else:
+            super().move(dt)
+    def die(self):
+        self.phase=255
+        super().die()
 
 
 possible_units=[BasicGuy,Mixer,Bazooka,Tele]

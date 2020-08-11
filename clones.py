@@ -55,6 +55,11 @@ class clone():
         self.exists=True
         self.log_completed=0
         self.exist_time=0
+    def update_pos(self,x,y):
+        self.x=x
+        self.y=y
+        self.sprite.update(x=self.x*SPRITE_SIZE_MULT,y=self.y*SPRITE_SIZE_MULT)
+        self.hpbar.update(x=(self.x-self.width//2)*SPRITE_SIZE_MULT,y=(self.y+self.height)*SPRITE_SIZE_MULT)
     def take_damage(self,amount):
         self.hp-=amount
         if self.hp<=0:
@@ -119,8 +124,7 @@ class clone():
             self.y=max(ycap,self.y+self.vy*dt)
             if not ycap==0:
                 self.vy=0
-            self.sprite.update(x=self.x*SPRITE_SIZE_MULT,y=self.y*SPRITE_SIZE_MULT)
-            self.hpbar.update(x=(self.x-self.width//2)*SPRITE_SIZE_MULT,y=(self.y+self.height)*SPRITE_SIZE_MULT)
+            self.update_pos(self.x,self.y)
     def die(self):
         if self.exists:
             if self.active:
@@ -288,20 +292,32 @@ class Tele(clone):
         self.lastshot=0
         self.radius=200
         self.enemies=l[1-side]
+        self.phase=255
     def shoot(self,a,dt):
         if self.active:
             self.log.append(["shoot",self.exist_time,a])
-        self.x+=a[0]/SPRITE_SIZE_MULT
-        self.y+=a[1]/SPRITE_SIZE_MULT
-        self.sprite.update(x=self.x*SPRITE_SIZE_MULT,y=self.y*SPRITE_SIZE_MULT)
-        for i in self.enemies:
-            if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:
-                i.take_damage(self.dmg)
+        self.update_pos(self.x+a[0]/SPRITE_SIZE_MULT,self.y+a[1]/SPRITE_SIZE_MULT)
+        self.phase=0
     def attempt_shoot(self,a,time,dt):
         t=time
         if t-self.lastshot>self.aspd and self.exist_time>3:
             self.shoot(a,0)
             self.lastshot=t
+    def move(self,dt):
+        if (not self.phase==255) and self.exists:
+            self.exist_time+=dt
+            self.phase=min(self.phase+100*dt,255)
+            self.sprite.opacity=self.phase
+            if self.phase==255:
+                for i in self.enemies:
+                    if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:
+                        i.take_damage(self.dmg)
+        else:
+            super().move(dt)
+    def die(self):
+        self.phase=255
+        self.sprite.opacity=self.phase
+        super().die()
 
 
 possible_units=[BasicGuy,Mixer,Bazooka,Tele]
