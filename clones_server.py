@@ -46,7 +46,7 @@ class clone():
         self.exists=True
         self.log_completed=0
         self.exist_time=0
-    def take_damage(self,amount):
+    def take_damage(self,amount,source):
         if self.exists:
             self.hp-=amount
             if self.hp<=0:
@@ -154,7 +154,7 @@ class BasicGuyBullet(Projectile):
     def __init__(self,x,y,vx,vy,enemies,rang,damage,l):
         super().__init__(x,y,vx,vy,enemies,rang,damage,l)
     def on_collision(self,e):
-        e.take_damage(self.damage)
+        e.take_damage(self.damage,self)
         pyglet.clock.unschedule(self.die)
         self.die(0)
 class BasicGuy(clone):
@@ -203,7 +203,7 @@ class Mixer(clone):
     def shoot(self,a,dt):
         for e in self.enemies:
             if e.exists and e.x-e.width/2<self.x<e.x+e.width/2 and e.y<self.y+self.height/2<e.y+e.height:
-                e.take_damage(self.dmg*dt)
+                e.take_damage(self.dmg*dt,self)
     def can_shoot(self):
         return False
     def move(self,dt):
@@ -254,7 +254,7 @@ class BazookaBullet(Projectile):
     def on_collision(self,e):
         for i in self.enemies:
             if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:
-                i.take_damage(self.damage)
+                i.take_damage(self.damage,self)
         pyglet.clock.unschedule(self.die)
         self.die(0)
 ##################################################################################################################
@@ -290,7 +290,7 @@ class Tele(clone):
             if self.phase==255:
                 for i in self.enemies:
                     if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:
-                        i.take_damage(self.dmg)
+                        i.take_damage(self.dmg,self)
         else:
             super().move(dt)
     def die(self):

@@ -42,6 +42,13 @@ class clone():
         self.hpbar=pyglet.sprite.Sprite(images.buttonG,self.x,self.y+self.height,batch=self.batch,group=dudeg)
         self.hpbar.scale=self.hpbar_scale
         self.hpbar.scale_y=5/self.hpbar.height
+        arro=[images.blue_arrow,images.red_arrow][self.side]
+        self.additional_images=[]
+        self.additional_images.append([pyglet.sprite.Sprite(arro,
+                                                           x=self.x*SPRITE_SIZE_MULT,
+                                                           y=(self.y+self.height+10)*SPRITE_SIZE_MULT,
+                                                            group=dudeg,batch=self.batch),
+                                       0,self.height+10])
     def start(self):
         if self.side==0:
             self.x=10
@@ -68,6 +75,8 @@ class clone():
         self.sprite.update(x=x*SPRITE_SIZE_MULT,y=y*SPRITE_SIZE_MULT)
         self.hpbar.update(x=(x-self.width//2)*SPRITE_SIZE_MULT,y=(y+self.height)*SPRITE_SIZE_MULT)
         self.x,self.y=x,y
+        for e in self.additional_images:
+            e[0].update(x=(self.x+e[1])*SPRITE_SIZE_MULT,y=(self.y+e[2])*SPRITE_SIZE_MULT)
     def on_ground(self):
         for e in self.mapp.platforms:
             if self.y==e.y+e.h and e.x<self.x<e.x+e.w:
@@ -127,6 +136,7 @@ class clone():
             if self.active:
                 self.active=False
                 self.log.sort(key=take_second)
+                self.additional_images=[]
             self.vx=0
             self.vy=0
             self.sprite.batch=None
