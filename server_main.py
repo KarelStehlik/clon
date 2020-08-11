@@ -6,7 +6,8 @@ import clones_server as clones
 from constants import *
 import time
 import serverchannels as channels
-
+import socket
+print(socket.gethostname())
 class player_channel(Channel):
     def start(self,side):
         self.side=side
@@ -42,7 +43,7 @@ class cw_server(Server):
             channels.send_both({"action":"start",
                                 "mapp":mappNum})
 
-srvr=cw_server()
+srvr=cw_server(localaddr=("192.168.1.132",5071))
 print(srvr.addr)
 
 class mapp():

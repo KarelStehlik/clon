@@ -3,7 +3,7 @@ from imports import *
 import maps
 import clones_client as clones
 from constants import * 
-connection.DoConnect(('127.0.0.1', 5071))
+connection.DoConnect(('192.168.1.132', 5071))
 connection.Send({"action":"test","dat":"l"})
 class MyNetworkListener(ConnectionListener):
     def __init__(self,*args,**kwargs):
