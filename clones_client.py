@@ -32,7 +32,7 @@ class clone():
         self.exist_time=0
         l[self.side]+=[self]
         self.l=l
-        self.hpbar_scale=self.width/images.buttonG.width
+        self.hpbar_scale=SPRITE_SIZE_MULT*self.width/images.buttonG.width
         if self.side==0:
             self.x=10
         else:

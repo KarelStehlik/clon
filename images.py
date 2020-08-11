@@ -43,7 +43,9 @@ BazookaBullet.anchor_y=BazookaBullet.height//2
 
 buttonG=pyglet.image.load("imagefolder/GreenButton.png")
 buttonR=pyglet.image.load("imagefolder/RedButton.png")
-platform=pyglet.image.load("imagefolder/platform.png")
+platform=pyglet.resource.image("imagefolder/platform.png")
 platform.width=int(platform.width*SPRITE_SIZE_MULT)
 platform.height=int(platform.height*SPRITE_SIZE_MULT)
+platform.anchor_x=platform.anchor_y=0
+print(platform.width,platform.height)
 cloneFrame=pyglet.image.load("imagefolder/clone_select.png")
