@@ -74,15 +74,18 @@ class clone():
                 return True
         return False
     def a_start(self):
-        self.vx=-self.spd
-        self.sprite.scale_x=-1
+        if self.exists:
+            self.vx=-self.spd
+            self.sprite.scale_x=-1
     def move_stop(self):
-        self.vx=0
+        if self.exists:
+            self.vx=0
     def d_start(self):
-        self.vx=self.spd
-        self.sprite.scale_x=1
+        if self.exists:
+            self.vx=self.spd
+            self.sprite.scale_x=1
     def w(self):
-        if self.on_ground():
+        if self.on_ground() and self.exists:
             self.vy=self.jump
     def move(self,dt):
         if self.exists:
@@ -194,7 +197,7 @@ class BasicGuy(clone):
         a.move(0.05)
     def can_shoot(self):
         t=self.exist_time
-        if t-self.lastshot>self.aspd:
+        if t-self.lastshot>self.aspd and self.exists:
             self.lastshot=t
             return True
         return False
@@ -248,7 +251,7 @@ class Bazooka(clone):
         a.move(0.05)
     def can_shoot(self):
         t=self.exist_time
-        if t-self.lastshot>self.aspd:
+        if t-self.lastshot>self.aspd and self.exists:
             self.lastshot=t
             return True
         return False
@@ -291,7 +294,7 @@ class Tele(clone):
         self.update_pos(self.x,self.y)
     def can_shoot(self):
         t=self.exist_time
-        if t-self.lastshot>self.aspd:
+        if t-self.lastshot>self.aspd and self.exists:
             self.lastshot=t
             return True
         return False
@@ -308,6 +311,7 @@ class Tele(clone):
             super().move(dt)
     def die(self):
         self.phase=255
+        self.sprite.opacity=self.phase
         super().die()
 
 

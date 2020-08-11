@@ -46,34 +46,37 @@ class clone():
         self.exists=True
         self.log_completed=0
         self.exist_time=0
-        print(self.x,self.y)
     def take_damage(self,amount):
-        self.hp-=amount
-        if self.hp<=0:
-            self.die()
-            return
+        if self.exists:
+            self.hp-=amount
+            if self.hp<=0:
+                self.die()
     def on_ground(self):
         for e in self.mapp.platforms:
             if self.y==e.y+e.h and e.x<self.x<e.x+e.w:
                 return True
         return False
     def a_start(self):
-        if self.active:
-            self.log.append(["a",self.exist_time])
-        self.vx=-self.spd
+        if self.exists:
+            if self.active:
+                self.log.append(["a",self.exist_time])
+            self.vx=-self.spd
     def move_stop(self):
-        if self.active:
-            self.log.append(["stop",self.exist_time])
-        self.vx=0
+        if self.exists:
+            if self.active:
+                self.log.append(["stop",self.exist_time])
+            self.vx=0
     def d_start(self):
-        if self.active:
-            self.log.append(["d",self.exist_time])
-        self.vx=self.spd
+        if self.exists:
+            if self.active:
+                self.log.append(["d",self.exist_time])
+            self.vx=self.spd
     def w(self):
-        if self.active:
-            self.log.append(["w",self.exist_time])
-        if self.on_ground():
-            self.vy=self.jump
+        if self.exists:
+            if self.active:
+                self.log.append(["w",self.exist_time])
+            if self.on_ground():
+                self.vy=self.jump
     def move(self,dt):
         if self.exists:
             self.exist_time+=dt
@@ -182,6 +185,8 @@ class BasicGuy(clone):
                          self.rang,self.dmg,self.bulletlist)
         a.move(0.05)
     def can_shoot(self):
+        if not self.exists:
+            return False
         t=self.exist_time
         if t-self.lastshot>self.aspd:
             self.lastshot=t
@@ -235,6 +240,8 @@ class Bazooka(clone):
                          self.rang,self.dmg,self.bulletlist,self.eradius)
         a.move(0.05)
     def can_shoot(self):
+        if not self.exists:
+            return False
         t=self.exist_time
         if t-self.lastshot>self.aspd:
             self.lastshot=t
@@ -269,6 +276,8 @@ class Tele(clone):
         self.y+=a[1]
         self.phase=0
     def can_shoot(self):
+        if not self.exists:
+            return False
         t=self.exist_time
         if t-self.lastshot>self.aspd:
             self.lastshot=t

@@ -4,7 +4,6 @@ import maps
 import clones_client as clones
 from constants import * 
 connection.DoConnect(('192.168.1.132', 5071))
-connection.Send({"action":"test","dat":"l"})
 class MyNetworkListener(ConnectionListener):
     def __init__(self,*args,**kwargs):
         super().__init__()
@@ -73,6 +72,10 @@ class mode():
     def key_release(self,symbol,modifiers):
         pass
     def resize(self,width,height):
+        pass
+    def mouse_press(self,x,y,button,modifiers):
+        pass
+    def mouse_release(self,x,y,button,modifiers):
         pass
 def rect_intersect(ax1,ay1,ax2,ay2,bx1,by1,bx2,by2):
     return ax1<=bx2 and bx1<=ax2 and ay1<=by2 and by1<=ay2
@@ -155,9 +158,7 @@ class mode_testing(mode):
         self.bullets=[]
         self.current_clones=[None,None]
         self.total_time=0
-        print("a")
         self.mapp=mappClass(self.mapp,batch)
-        print("a")
     def start_round(self):
         self.win.current_mode=self
         for e in self.clones[0]:
@@ -180,7 +181,7 @@ class mode_testing(mode):
             if a.can_shoot():
                 connection.Send({"action": "shoot",
                                  "a": [self.mousex/SPRITE_SIZE_MULT-a.x,
-                                 self.mousey/SPRITE_SIZE_MULT-a.y+a.height/2]})
+                                 self.mousey/SPRITE_SIZE_MULT-a.y-a.height/2]})
         for e in self.clones[0]:
             e.move(dt)
             e.vy-=self.gravity*dt
