@@ -285,8 +285,8 @@ class Tele(clone):
         self.enemies=l[1-side]
         self.phase=255
     def shoot(self,a,dt):
-        self.x+=a[0]/SPRITE_SIZE_MULT
-        self.y+=a[1]/SPRITE_SIZE_MULT
+        self.x+=a[0]
+        self.y+=a[1]
         self.phase=0
         self.update_pos(self.x,self.y)
     def can_shoot(self):

@@ -45,7 +45,6 @@ class mode():
     def __init__(self,win,batch):
         self.batch=batch
         self.mousex=self.mousey=self.sec=self.frames=0
-        self.mouseheld=False
         self.win=win
         self.fpscount=pyglet.text.Label(x=5,y=5,text="aaa",color=(255,255,255,255))
     def mouse_move(self,x, y, dx, dy):
@@ -73,10 +72,6 @@ class mode():
         pass
     def key_release(self,symbol,modifiers):
         pass
-    def mouse_press(self,x,y,button,modifiers):
-        self.mouseheld=True
-    def mouse_release(self,x,y,button,modifiers):
-        self.mouseheld=False
     def resize(self,width,height):
         pass
 def rect_intersect(ax1,ay1,ax2,ay2,bx1,by1,bx2,by2):
@@ -108,7 +103,6 @@ class mode_choosing(mode):
             self.imgs.append(b)
             i+=1
     def mouse_press(self,x,y,button,modifiers):
-        super().mouse_press(x,y,button,modifiers)
         i=0
         for e in self.cframes:
             if e.x<x<e.x+e.width and e.y<y<e.y+e.height:
@@ -180,12 +174,12 @@ class mode_testing(mode):
         self.mouse_move(x,y,dx,dy)
     def tick(self,dt):
         self.total_time+=dt
-        if self.mouseheld:
+        if self.win.mouseheld:
             global side
             a=self.current_clones[side]
             if a.can_shoot():
                 connection.Send({"action": "shoot",
-                                 "a": [self.mousex-a.x*SPRITE_SIZE_MULT,
+                                 "a": [self.mousex/SPRITE_SIZE_MULT-a.x,
                                  self.mousey-(a.y+a.height/2)*SPRITE_SIZE_MULT]})
         for e in self.clones[0]:
             e.move(dt)
@@ -209,6 +203,7 @@ class mode_testing(mode):
 
 class windoo(pyglet.window.Window):
     def start(self):
+        self.mouseheld=False
         self.mainBatch = pyglet.graphics.Batch()
         self.cc=mode_choosing(self,self.mainBatch)
         self.main=mode(self,self.mainBatch)
@@ -231,11 +226,13 @@ class windoo(pyglet.window.Window):
     def on_key_release(self,symbol,modifiers):
         self.current_mode.key_release(symbol,modifiers)
     def on_mouse_release(self, x, y, button, modifiers):
+        self.mouseheld=False
         self.current_mode.mouse_release(x,y,button,modifiers)
     def on_resize(self,width,height):
         super().on_resize(width,height)
         self.current_mode.resize(width,height)
     def on_mouse_press(self,x,y,button,modifiers):
+        self.mouseheld=True
         self.current_mode.mouse_press(x,y,button,modifiers)
 place = windoo(resizable=True,caption='test',fullscreen=False)
 place.start()
