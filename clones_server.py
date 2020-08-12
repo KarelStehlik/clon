@@ -51,6 +51,7 @@ class clone():
             self.hp-=amount
             if self.hp<=0:
                 self.die()
+                channels.cn[1-self.side].get_money(self.cost//2+25)
     def on_ground(self):
         for e in self.mapp.platforms:
             if self.y==e.y+e.h and e.x<self.x<e.x+e.w:
@@ -158,6 +159,7 @@ class BasicGuyBullet(Projectile):
         pyglet.clock.unschedule(self.die)
         self.die(0)
 class BasicGuy(clone):
+    cost=0
     def __init__(self,mapp,l,bulletlist,side):
         super().__init__(mapp,l,hp=50,height=70,
                          width=30,spd=200,jump=600,side=side)
@@ -194,6 +196,7 @@ class BasicGuy(clone):
         return False
 ###########################################################################################################
 class Mixer(clone):
+    cost=50
     def __init__(self,mapp,l,bulletlist,side):
         super().__init__(mapp,l,hp=100,height=60,
                          width=30,spd=300,jump=700,side=side)
@@ -212,6 +215,7 @@ class Mixer(clone):
             self.shoot([],dt)
 #########################################################################################################
 class Bazooka(clone):
+    cost=500
     def __init__(self,mapp,l,bulletlist,side):
         super().__init__(mapp,l,hp=150,height=65,
                          width=65,spd=200,jump=600,side=side)
@@ -259,6 +263,7 @@ class BazookaBullet(Projectile):
         self.die(0)
 ##################################################################################################################
 class Tele(clone):
+    cost=250
     def __init__(self,mapp,l,bulletlist,side):
         super().__init__(mapp,l,hp=50,height=80,
                          width=44,spd=200,jump=600,side=side)

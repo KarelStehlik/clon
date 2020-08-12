@@ -25,6 +25,7 @@ class MyNetworkListener(ConnectionListener):
     def Network_summon(self,data):
         place.main.summon_clone(data["c"],data["s"])
     def Network_start_round(self,data):
+        place.cc.end()
         place.main.start_round()
     def Network_endround(self,data):
         place.main.current_clones[0].die()
@@ -39,13 +40,14 @@ class MyNetworkListener(ConnectionListener):
         place.main.current_clones[1].update_health(data["hp1"])
         place.main.current_clones[0].update_pos(data["x0"],data["y0"])
         place.main.current_clones[1].update_pos(data["x1"],data["y1"])
+    def Network_update_money(self,data):
+        place.money=data["money"]
 nwl=MyNetworkListener()
 class mode():
     def __init__(self,win,batch):
         self.batch=batch
-        self.mousex=self.mousey=self.sec=self.frames=0
+        self.mousex=self.mousey=0
         self.win=win
-        self.fpscount=pyglet.text.Label(x=5,y=5,text="aaa",color=(255,255,255,255))
     def mouse_move(self,x, y, dx, dy):
         self.mousex=x
         self.mousey=y
@@ -54,16 +56,7 @@ class mode():
     def tick(self,dt):
         self.win.switch_to()
         self.draw_all()
-        self.fpscount.draw()
-        self.check(dt)
         self.win.flip()
-    def check(self,dt):
-        self.sec+=dt
-        self.frames+=1
-        if self.sec>1:
-            self.sec-=1
-            self.fpscount.text=str(self.frames)
-            self.frames=0
     def draw_all(self):
         self.win.clear()
         self.batch.draw()
@@ -84,11 +77,19 @@ class mode_choosing(mode):
         super().__init__(win,batch)
         self.ccgroup1=pyglet.graphics.OrderedGroup(3)
         self.ccgroup2=pyglet.graphics.OrderedGroup(4)
+        self.ccgroup3=pyglet.graphics.OrderedGroup(5)
         self.win=win
         self.batch=batch
         self.cframes=[]
         self.imgs=[]
+        self.select=pyglet.text.Label(x=-500,multiline=True,width=images.cloneFrame.width,
+                                y=-500,color=(255,255,0,255),
+                                batch=self.batch,group=self.ccgroup3,font_size=int(30*SPRITE_SIZE_MULT),
+                                anchor_x="center",align="center",anchor_y="bottom")
     def start(self,side):
+        self.select.batch=self.batch
+        self.select.x=-500
+        self.select.y=-500
         self.win.current_mode=self
         i=0
         w=images.cloneFrame.width
@@ -104,13 +105,24 @@ class mode_choosing(mode):
             b.scale=(w/e.imageG.width)*0.8
             self.cframes.append(a)
             self.imgs.append(b)
+            c=pyglet.text.Label(x=int((i*w+30+w/2)*SPRITE_SIZE_MULT),
+                                y=490*SPRITE_SIZE_MULT,text=str(e.cost),color=(255,255,0,255),
+                                batch=self.batch,group=self.ccgroup3,font_size=int(40*SPRITE_SIZE_MULT),
+                                anchor_x="center")
+            self.imgs.append(c)
             i+=1
     def mouse_press(self,x,y,button,modifiers):
         i=0
+        w=images.cloneFrame.width
         for e in self.cframes:
             if e.x<x<e.x+e.width and e.y<y<e.y+e.height:
-                connection.Send({"action":"chosen","choice":i})
-                self.end()
+                self.select.x=int((i*w+30+w/2)*SPRITE_SIZE_MULT)
+                self.select.y=50*SPRITE_SIZE_MULT
+                if self.win.money>=clones.possible_units[i].cost:
+                    connection.Send({"action":"chosen","choice":i})
+                    self.select.text="selected"
+                else:
+                    self.select.text="not enough money"
                 return
             i+=1
     def end(self):
@@ -123,6 +135,7 @@ class mode_choosing(mode):
             del e
         self.cframes=[]
         self.imgs=[]
+        self.select.batch=None
     def key_press(self,symbol,modifiers):
         if symbol in [key.RIGHT,key.D]:
             w=self.cframes[0].width
@@ -204,8 +217,15 @@ class mode_testing(mode):
 
 class windoo(pyglet.window.Window):
     def start(self):
-        self.mouseheld=False
         self.mainBatch = pyglet.graphics.Batch()
+        self.money=self.sec=self.frames=0
+        self.fpscount=pyglet.text.Label(x=5,y=5,text="aaa",color=(255,255,255,255),
+                                        group=pyglet.graphics.OrderedGroup(4),batch=self.mainBatch)
+        self.money_label=pyglet.text.Label(x=SCREEN_WIDTH-20,y=SCREEN_HEIGHT,text=str(self.money),
+                                           color=(255,255,0,255),group=pyglet.graphics.OrderedGroup(4),
+                                           anchor_x="right",anchor_y="top",batch=self.mainBatch,
+                                           font_size=int(40*SPRITE_SIZE_MULT))
+        self.mouseheld=False
         self.cc=mode_choosing(self,self.mainBatch)
         self.main=mode(self,self.mainBatch)
         self.current_mode=self.main
@@ -220,8 +240,9 @@ class windoo(pyglet.window.Window):
         connection.close()
         os._exit(0)
     def tick(self,dt):
-        self.current_mode.tick(dt)
         self.dispatch_events()
+        self.check(dt)
+        self.current_mode.tick(dt)
     def on_key_press(self,symbol,modifiers):
         self.current_mode.key_press(symbol,modifiers)
     def on_key_release(self,symbol,modifiers):
@@ -235,7 +256,17 @@ class windoo(pyglet.window.Window):
     def on_mouse_press(self,x,y,button,modifiers):
         self.mouseheld=True
         self.current_mode.mouse_press(x,y,button,modifiers)
-place = windoo(resizable=True,caption='test',fullscreen=False)
+    def on_deactivate(self):
+        self.minimize()
+    def check(self,dt):
+        self.sec+=dt
+        self.frames+=1
+        self.money_label.text=str(self.money)
+        if self.sec>1:
+            self.sec-=1
+            self.fpscount.text=str(self.frames)
+            self.frames=0
+place = windoo(resizable=True,caption='test',fullscreen=True)
 place.start()
 pyglet.clock.schedule_interval(place.tick,1.0/60)
 

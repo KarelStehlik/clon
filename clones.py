@@ -10,12 +10,14 @@ def rect_intersect(ax1,ay1,ax2,ay2,bx1,by1,bx2,by2):
 def take_second(l):
     return l[1]
 class clone():
-    def __init__(self,mapp,l,batch,**kwargs):
+    def __init__(self,mapp,l,batch,win,**kwargs):
         self.side=kwargs["side"]
+        print(self.cost)
         if self.side==0:
             self.skin=self.imageG
         else:
             self.skin=self.imageR
+        self.cost=kwargs["cost"]
         self.maxhp=kwargs["hp"]
         self.hp=self.maxhp
         self.height=kwargs["height"]
@@ -23,6 +25,7 @@ class clone():
         self.batch=batch
         self.spd=kwargs["spd"]
         self.jump=kwargs["jump"]
+        self.win=win
         self.mapp=mapp
         self.active=True
         self.exists=False
@@ -72,6 +75,7 @@ class clone():
     def take_damage(self,amount,source):
         self.hp-=amount
         if self.hp<=0:
+            self.win.money+=self.cost//2+25
             self.die()
             return
         self.hpbar.scale_x=self.hp/self.maxhp
@@ -184,11 +188,13 @@ class BasicGuyBullet(Projectile):
         pyglet.clock.unschedule(self.die)
         self.die(0)
 class BasicGuy(clone):
+    cost=0
     imageG=images.gunmanG
     imageR=images.gunmanR
-    def __init__(self,mapp,l,bulletlist,batch,side):
-        super().__init__(mapp,l,batch,hp=50,height=70,
-                         width=30,spd=200,jump=600,side=side)
+    def __init__(self,mapp,l,bulletlist,batch,side,win):
+        super().__init__(mapp,l,batch,win,hp=50,height=70,
+                         width=30,spd=200,jump=600,side=side,
+                         cost=self.cost)
         self.dmg=20
         self.aspd=0.7
         self.bspd=400
@@ -218,11 +224,13 @@ class BasicGuy(clone):
             self.lastshot=t
 ###########################################################################################################
 class Mixer(clone):
+    cost=50
     imageG=images.mixerG
     imageR=images.mixerR
-    def __init__(self,mapp,l,bulletlist,batch,side):
-        super().__init__(mapp,l,batch,hp=100,height=60,
-                         width=30,spd=300,jump=700,side=side)
+    def __init__(self,mapp,l,bulletlist,batch,side,win):
+        super().__init__(mapp,l,batch,win,hp=100,height=60,
+                         width=30,spd=300,jump=700,side=side,
+                         cost=self.cost)
         self.dmg=200
         self.lastshot=0
         self.enemies=l[1-self.side]
@@ -240,9 +248,11 @@ class Mixer(clone):
 class Bazooka(clone):
     imageG=images.ZookaG
     imageR=images.ZookaR
-    def __init__(self,mapp,l,bulletlist,batch,side):
-        super().__init__(mapp,l,batch,hp=150,height=65,
-                         width=65,spd=200,jump=600,side=side)
+    cost=500
+    def __init__(self,mapp,l,bulletlist,batch,side,win):
+        super().__init__(mapp,l,batch,win,hp=150,height=65,
+                         width=65,spd=200,jump=600,side=side,
+                         cost=self.cost)
         self.dmg=70
         self.aspd=3
         self.bspd=500
@@ -292,11 +302,13 @@ class BazookaBullet(Projectile):
         self.die(0)
 ##################################################################################################################
 class Tele(clone):
+    cost=250
     imageG=images.teleG
     imageR=images.teleR
-    def __init__(self,mapp,l,bulletlist,batch,side):
-        super().__init__(mapp,l,batch,hp=50,height=80,
-                         width=44,spd=200,jump=600,side=side)
+    def __init__(self,mapp,l,bulletlist,batch,side,win):
+        super().__init__(mapp,l,batch,win,hp=50,height=80,
+                         width=44,spd=200,jump=600,side=side,
+                         cost=self.cost)
         self.dmg=40
         self.aspd=3
         self.lastshot=0

@@ -180,6 +180,7 @@ class BasicGuyBullet(Projectile):
         pyglet.clock.unschedule(self.die)
         self.die(0)
 class BasicGuy(clone):
+    cost=0
     imageG=images.gunmanG
     imageR=images.gunmanR
     def __init__(self,mapp,l,bulletlist,batch,side):
@@ -213,6 +214,7 @@ class BasicGuy(clone):
         return False
 ###########################################################################################################
 class Mixer(clone):
+    cost=50
     imageG=images.mixerG
     imageR=images.mixerR
     def __init__(self,mapp,l,bulletlist,batch,side):
@@ -233,6 +235,7 @@ class Mixer(clone):
             self.shoot([],dt)
 #########################################################################################################
 class Bazooka(clone):
+    cost=500
     imageG=images.ZookaG
     imageR=images.ZookaR
     def __init__(self,mapp,l,bulletlist,batch,side):
@@ -286,6 +289,7 @@ class BazookaBullet(Projectile):
         self.die(0)
 ##################################################################################################################
 class Tele(clone):
+    cost=250
     imageG=images.teleG
     imageR=images.teleR
     def __init__(self,mapp,l,bulletlist,batch,side):
