@@ -82,6 +82,7 @@ class mode_choosing(mode):
         self.batch=batch
         self.cframes=[]
         self.imgs=[]
+        self.moved=0
         self.select=pyglet.text.Label(x=-500,multiline=True,width=images.cloneFrame.width,
                                 y=-500,color=(255,255,0,255),
                                 batch=self.batch,group=self.ccgroup3,font_size=int(30*SPRITE_SIZE_MULT),
@@ -116,7 +117,7 @@ class mode_choosing(mode):
         w=images.cloneFrame.width
         for e in self.cframes:
             if e.x<x<e.x+e.width and e.y<y<e.y+e.height:
-                self.select.x=int(i*w+w/2+30*SPRITE_SIZE_MULT)
+                self.select.x=int((i+self.moved)*w+w/2+30*SPRITE_SIZE_MULT)
                 self.select.y=50*SPRITE_SIZE_MULT
                 if self.win.money>=clones.possible_units[i].cost:
                     connection.Send({"action":"chosen","choice":i})
@@ -139,12 +140,14 @@ class mode_choosing(mode):
     def key_press(self,symbol,modifiers):
         if symbol in [key.RIGHT,key.D]:
             w=self.cframes[0].width
-            for e in self.cframes+self.imgs:
+            for e in self.cframes+self.imgs+[self.select]:
                 e.x-=w
+            self.moved-=1
         elif symbol in [key.LEFT,key.A]:
             w=self.cframes[0].width
-            for e in self.cframes+self.imgs:
+            for e in self.cframes+self.imgs+[self.select]:
                 e.x+=w
+            self.moved+=1
 class mappClass():
     def __init__(self,inp,batch):
         self.platforms=[]
