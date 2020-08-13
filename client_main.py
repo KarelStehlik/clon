@@ -180,7 +180,7 @@ class mode_testing(mode):
             if a.can_shoot():
                 connection.Send({"action": "shoot",
                                  "a": [self.mousex/SPRITE_SIZE_MULT-a.x,
-                                 self.mousey/SPRITE_SIZE_MULT-a.y+a.height/2]})
+                                 self.mousey/SPRITE_SIZE_MULT-a.y-a.height/2]})
         for e in self.clones[0]:
             e.move(dt)
             e.vy-=self.gravity*dt
