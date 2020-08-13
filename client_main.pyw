@@ -137,6 +137,7 @@ class mode_choosing(mode):
         self.cframes=[]
         self.imgs=[]
         self.select.batch=None
+        self.moved=0
     def key_press(self,symbol,modifiers):
         if symbol in [key.RIGHT,key.D]:
             w=self.cframes[0].width
