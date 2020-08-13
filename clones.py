@@ -10,12 +10,14 @@ def rect_intersect(ax1,ay1,ax2,ay2,bx1,by1,bx2,by2):
 def take_second(l):
     return l[1]
 class clone():
-    def __init__(self,mapp,l,batch,**kwargs):
+    def __init__(self,mapp,l,batch,win,**kwargs):
         self.side=kwargs["side"]
+        print(self.cost)
         if self.side==0:
             self.skin=self.imageG
         else:
             self.skin=self.imageR
+        self.cost=kwargs["cost"]
         self.maxhp=kwargs["hp"]
         self.hp=self.maxhp
         self.height=kwargs["height"]
@@ -23,6 +25,7 @@ class clone():
         self.batch=batch
         self.spd=kwargs["spd"]
         self.jump=kwargs["jump"]
+        self.win=win
         self.mapp=mapp
         self.active=True
         self.exists=False
@@ -42,6 +45,13 @@ class clone():
         self.hpbar=pyglet.sprite.Sprite(images.buttonG,self.x,self.y+self.height,batch=self.batch,group=dudeg)
         self.hpbar.scale=self.hpbar_scale
         self.hpbar.scale_y=5/self.hpbar.height
+        self.additional_images=[]
+        arro=[images.blue_arrow,images.red_arrow][self.side]
+        self.additional_images.append([pyglet.sprite.Sprite(arro,
+                                                           x=self.x*SPRITE_SIZE_MULT,
+                                                           y=(self.y+self.height+10)*SPRITE_SIZE_MULT,
+                                                            group=dudeg,batch=self.batch),
+                                       0,self.height+10])
     def start(self):
         if self.side==0:
             self.x=10
@@ -58,11 +68,14 @@ class clone():
     def update_pos(self,x,y):
         self.x=x
         self.y=y
+        for e in self.additional_images:
+            e[0].update(x=(self.x+e[1])*SPRITE_SIZE_MULT,y=(self.y+e[2])*SPRITE_SIZE_MULT)
         self.sprite.update(x=self.x*SPRITE_SIZE_MULT,y=self.y*SPRITE_SIZE_MULT)
         self.hpbar.update(x=(self.x-self.width//2)*SPRITE_SIZE_MULT,y=(self.y+self.height)*SPRITE_SIZE_MULT)
-    def take_damage(self,amount):
+    def take_damage(self,amount,source):
         self.hp-=amount
         if self.hp<=0:
+            self.win.money+=self.cost//2+25
             self.die()
             return
         self.hpbar.scale_x=self.hp/self.maxhp
@@ -130,6 +143,7 @@ class clone():
             if self.active:
                 self.log.append(["die",self.exist_time])
                 self.active=False
+                self.additional_images=[]
                 self.log.sort(key=take_second)
             self.vx=0
             self.vy=0
@@ -170,15 +184,17 @@ class BasicGuyBullet(Projectile):
     def __init__(self,x,y,vx,vy,enemies,rang,damage,l,batch):
         super().__init__(x,y,vx,vy,enemies,rang,damage,l,batch,images.bullet)
     def on_collision(self,e):
-        e.take_damage(self.damage)
+        e.take_damage(self.damage,self)
         pyglet.clock.unschedule(self.die)
         self.die(0)
 class BasicGuy(clone):
+    cost=0
     imageG=images.gunmanG
     imageR=images.gunmanR
-    def __init__(self,mapp,l,bulletlist,batch,side):
-        super().__init__(mapp,l,batch,hp=50,height=70,
-                         width=30,spd=200,jump=600,side=side)
+    def __init__(self,mapp,l,bulletlist,batch,side,win):
+        super().__init__(mapp,l,batch,win,hp=50,height=70,
+                         width=30,spd=200,jump=600,side=side,
+                         cost=self.cost)
         self.dmg=20
         self.aspd=0.7
         self.bspd=400
@@ -208,18 +224,20 @@ class BasicGuy(clone):
             self.lastshot=t
 ###########################################################################################################
 class Mixer(clone):
+    cost=50
     imageG=images.mixerG
     imageR=images.mixerR
-    def __init__(self,mapp,l,bulletlist,batch,side):
-        super().__init__(mapp,l,batch,hp=100,height=60,
-                         width=30,spd=300,jump=700,side=side)
+    def __init__(self,mapp,l,bulletlist,batch,side,win):
+        super().__init__(mapp,l,batch,win,hp=100,height=60,
+                         width=30,spd=300,jump=700,side=side,
+                         cost=self.cost)
         self.dmg=200
         self.lastshot=0
         self.enemies=l[1-self.side]
     def shoot(self,a,dt):
         for e in self.enemies:
             if e.exists and e.x-e.width/2<self.x<e.x+e.width/2 and e.y<self.y+self.height/2<e.y+e.height:
-                e.take_damage(self.dmg*dt)
+                e.take_damage(self.dmg*dt,self)
     def attempt_shoot(self,a,time,dt):
         pass
     def move(self,dt):
@@ -230,9 +248,11 @@ class Mixer(clone):
 class Bazooka(clone):
     imageG=images.ZookaG
     imageR=images.ZookaR
-    def __init__(self,mapp,l,bulletlist,batch,side):
-        super().__init__(mapp,l,batch,hp=150,height=65,
-                         width=65,spd=200,jump=600,side=side)
+    cost=500
+    def __init__(self,mapp,l,bulletlist,batch,side,win):
+        super().__init__(mapp,l,batch,win,hp=150,height=65,
+                         width=65,spd=200,jump=600,side=side,
+                         cost=self.cost)
         self.dmg=70
         self.aspd=3
         self.bspd=500
@@ -277,16 +297,18 @@ class BazookaBullet(Projectile):
     def on_collision(self,e):
         for i in self.enemies:
             if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:
-                i.take_damage(self.damage)
+                i.take_damage(self.damage,self)
         pyglet.clock.unschedule(self.die)
         self.die(0)
 ##################################################################################################################
 class Tele(clone):
+    cost=250
     imageG=images.teleG
     imageR=images.teleR
-    def __init__(self,mapp,l,bulletlist,batch,side):
-        super().__init__(mapp,l,batch,hp=50,height=80,
-                         width=44,spd=200,jump=600,side=side)
+    def __init__(self,mapp,l,bulletlist,batch,side,win):
+        super().__init__(mapp,l,batch,win,hp=50,height=80,
+                         width=44,spd=200,jump=600,side=side,
+                         cost=self.cost)
         self.dmg=40
         self.aspd=3
         self.lastshot=0
@@ -311,7 +333,7 @@ class Tele(clone):
             if self.phase==255:
                 for i in self.enemies:
                     if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:
-                        i.take_damage(self.dmg)
+                        i.take_damage(self.dmg,self)
         else:
             super().move(dt)
     def die(self):

@@ -42,6 +42,13 @@ class clone():
         self.hpbar=pyglet.sprite.Sprite(images.buttonG,self.x,self.y+self.height,batch=self.batch,group=dudeg)
         self.hpbar.scale=self.hpbar_scale
         self.hpbar.scale_y=5/self.hpbar.height
+        arro=[images.blue_arrow,images.red_arrow][self.side]
+        self.additional_images=[]
+        self.additional_images.append([pyglet.sprite.Sprite(arro,
+                                                           x=self.x*SPRITE_SIZE_MULT,
+                                                           y=(self.y+self.height+10)*SPRITE_SIZE_MULT,
+                                                            group=dudeg,batch=self.batch),
+                                       0,self.height+10])
     def start(self):
         if self.side==0:
             self.x=10
@@ -68,21 +75,26 @@ class clone():
         self.sprite.update(x=x*SPRITE_SIZE_MULT,y=y*SPRITE_SIZE_MULT)
         self.hpbar.update(x=(x-self.width//2)*SPRITE_SIZE_MULT,y=(y+self.height)*SPRITE_SIZE_MULT)
         self.x,self.y=x,y
+        for e in self.additional_images:
+            e[0].update(x=(self.x+e[1])*SPRITE_SIZE_MULT,y=(self.y+e[2])*SPRITE_SIZE_MULT)
     def on_ground(self):
         for e in self.mapp.platforms:
             if self.y==e.y+e.h and e.x<self.x<e.x+e.w:
                 return True
         return False
     def a_start(self):
-        self.vx=-self.spd
-        self.sprite.scale_x=-1
+        if self.exists:
+            self.vx=-self.spd
+            self.sprite.scale_x=-1
     def move_stop(self):
-        self.vx=0
+        if self.exists:
+            self.vx=0
     def d_start(self):
-        self.vx=self.spd
-        self.sprite.scale_x=1
+        if self.exists:
+            self.vx=self.spd
+            self.sprite.scale_x=1
     def w(self):
-        if self.on_ground():
+        if self.on_ground() and self.exists:
             self.vy=self.jump
     def move(self,dt):
         if self.exists:
@@ -124,6 +136,7 @@ class clone():
             if self.active:
                 self.active=False
                 self.log.sort(key=take_second)
+                self.additional_images=[]
             self.vx=0
             self.vy=0
             self.sprite.batch=None
@@ -167,6 +180,7 @@ class BasicGuyBullet(Projectile):
         pyglet.clock.unschedule(self.die)
         self.die(0)
 class BasicGuy(clone):
+    cost=0
     imageG=images.gunmanG
     imageR=images.gunmanR
     def __init__(self,mapp,l,bulletlist,batch,side):
@@ -194,12 +208,13 @@ class BasicGuy(clone):
         a.move(0.05)
     def can_shoot(self):
         t=self.exist_time
-        if t-self.lastshot>self.aspd:
+        if t-self.lastshot>self.aspd and self.exists:
             self.lastshot=t
             return True
         return False
 ###########################################################################################################
 class Mixer(clone):
+    cost=50
     imageG=images.mixerG
     imageR=images.mixerR
     def __init__(self,mapp,l,bulletlist,batch,side):
@@ -220,6 +235,7 @@ class Mixer(clone):
             self.shoot([],dt)
 #########################################################################################################
 class Bazooka(clone):
+    cost=500
     imageG=images.ZookaG
     imageR=images.ZookaR
     def __init__(self,mapp,l,bulletlist,batch,side):
@@ -248,7 +264,7 @@ class Bazooka(clone):
         a.move(0.05)
     def can_shoot(self):
         t=self.exist_time
-        if t-self.lastshot>self.aspd:
+        if t-self.lastshot>self.aspd and self.exists:
             self.lastshot=t
             return True
         return False
@@ -273,6 +289,7 @@ class BazookaBullet(Projectile):
         self.die(0)
 ##################################################################################################################
 class Tele(clone):
+    cost=250
     imageG=images.teleG
     imageR=images.teleR
     def __init__(self,mapp,l,bulletlist,batch,side):
@@ -291,7 +308,7 @@ class Tele(clone):
         self.update_pos(self.x,self.y)
     def can_shoot(self):
         t=self.exist_time
-        if t-self.lastshot>self.aspd:
+        if t-self.lastshot>self.aspd and self.exists:
             self.lastshot=t
             return True
         return False
@@ -308,6 +325,7 @@ class Tele(clone):
             super().move(dt)
     def die(self):
         self.phase=255
+        self.sprite.opacity=self.phase
         super().die()
 
 

@@ -7,10 +7,13 @@ from constants import *
 import time
 import serverchannels as channels
 import socket
-print(socket.gethostname())
 class player_channel(Channel):
     def start(self,side):
         self.side=side
+        self.money=0
+    def get_money(self,amount):
+        self.money+=amount
+        self.Send({"action":"update_money","money":self.money})
     def Network_stop(self,data):
         mt.current_clones[self.side].move_stop()
         channels.send_both({"action":"stop","side":self.side})
@@ -26,7 +29,7 @@ class player_channel(Channel):
     def Network_shoot(self,data):
         mt.current_clones[self.side].add_shoot(data["a"])
     def Network_chosen(self,data):
-        mc.make_choice(self.side,data["choice"])
+        mc.make_choice(self.side,data["choice"],self.money)
 mappNum=0
 class cw_server(Server):
     channelClass = player_channel
@@ -44,7 +47,6 @@ class cw_server(Server):
                                 "mapp":mappNum})
 
 srvr=cw_server(localaddr=("192.168.1.132",5071))
-print(srvr.addr)
 
 class mapp():
     def __init__(self,mapp):
@@ -62,7 +64,9 @@ class mode_testing():
         self.current_clones=[None,None]
         self.running=False
         self.summon_clones(0,1)
-    def end_round(self):
+        self.end_scheduled=False
+    def end_round(self,dt):
+        self.end_scheduled=False
         self.running=False
         global current_mode
         current_mode=mode_choosing()
@@ -97,8 +101,9 @@ class mode_testing():
                 e.vy-=self.gravity*dt
             for e in self.bullets:
                 e.move(dt)
-            if (not self.current_clones[1].exists) or (not self.current_clones[0].exists):
-                self.end_round()
+            if ((not self.current_clones[1].exists) or (not self.current_clones[0].exists)) and not self.end_scheduled:
+                pyglet.clock.schedule_once(self.end_round,5)
+                self.end_scheduled=True
             channels.send_both({"action":"update",
                                 "hp0":self.current_clones[0].hp,
                                 "hp1":self.current_clones[1].hp,
@@ -111,11 +116,13 @@ class mode_choosing():
         self.choices=[-1,-1]
         global mc
         mc=self
-    def make_choice(self,side,c):
-        if 0<=c<=len(clones.possible_units):
+    def make_choice(self,side,c,money):
+        if 0<=c<=len(clones.possible_units) and clones.possible_units[c].cost<=money:
             self.choices[side]=int(c)
             if not self.choices[1-side] == -1:
                 global current_mode,mt
+                channels.cn[0].get_money(-clones.possible_units[self.choices[0]].cost)
+                channels.cn[1].get_money(-clones.possible_units[self.choices[1]].cost)
                 current_mode=mt
                 current_mode.summon_clones(self.choices[0],self.choices[1])
     def tick(self,dt):

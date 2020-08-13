@@ -47,5 +47,11 @@ platform=pyglet.resource.image("imagefolder/platform.png")
 platform.width=int(platform.width*SPRITE_SIZE_MULT)
 platform.height=int(platform.height*SPRITE_SIZE_MULT)
 platform.anchor_x=platform.anchor_y=0
-print(platform.width,platform.height)
 cloneFrame=pyglet.image.load("imagefolder/clone_select.png")
+blue_arrow=pyglet.resource.image("imagefolder/blue_arrow.png")
+red_arrow=pyglet.resource.image("imagefolder/red_arrow.png")
+blue_arrow.width=red_arrow.width=int(blue_arrow.width*SPRITE_SIZE_MULT/15)
+blue_arrow.height=red_arrow.height=int(blue_arrow.height*SPRITE_SIZE_MULT/15)
+blue_arrow.anchor_x=int(blue_arrow.width/2)
+red_arrow.anchor_x=int(red_arrow.width/2)
+

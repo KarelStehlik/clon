@@ -5,10 +5,9 @@ from constants import *
 class mode():
     def __init__(self,win,batch):
         self.batch=batch
-        self.mousex=self.mousey=self.sec=self.frames=0
+        self.mousex=self.mousey=0
         self.mouseheld=False
         self.win=win
-        self.fpscount=pyglet.text.Label(x=5,y=5,text="aaa",color=(255,255,255,255))
     def mouse_move(self,x, y, dx, dy):
         self.mousex=x
         self.mousey=y
@@ -17,16 +16,7 @@ class mode():
     def tick(self,dt):
         self.win.switch_to()
         self.draw_all()
-        self.fpscount.draw()
-        self.check(dt)
         self.win.flip()
-    def check(self,dt):
-        self.sec+=dt
-        self.frames+=1
-        if self.sec>1:
-            self.sec-=1
-            self.fpscount.text=str(self.frames)
-            self.frames=0
     def draw_all(self):
         self.win.clear()
         self.batch.draw()
@@ -47,6 +37,7 @@ class mode_choosing(mode):
         super().__init__(win,batch)
         self.ccgroup1=pyglet.graphics.OrderedGroup(3)
         self.ccgroup2=pyglet.graphics.OrderedGroup(4)
+        self.ccgroup3=pyglet.graphics.OrderedGroup(5)
         self.win=win
         self.batch=batch
         self.cframes=[]
@@ -67,15 +58,21 @@ class mode_choosing(mode):
             b.scale=(w/e.imageG.width)*0.8
             self.cframes.append(a)
             self.imgs.append(b)
+            c=pyglet.text.Label(x=int((i*w+30+w/2)*SPRITE_SIZE_MULT),
+                                y=490*SPRITE_SIZE_MULT,text=str(e.cost),color=(255,255,0,255),
+                                batch=self.batch,group=self.ccgroup3,font_size=int(40*SPRITE_SIZE_MULT),
+                                anchor_x="center")
+            self.imgs.append(c)
             i+=1
     def mouse_press(self,x,y,button,modifiers):
         super().mouse_press(x,y,button,modifiers)
         i=0
         for e in self.cframes:
             if e.x<x<e.x+e.width and e.y<y<e.y+e.height:
-                self.win.currentMode=self.win.main
-                self.win.main.summon_clone(i)
-                self.end()
+                if clones.possible_units[i].cost<=self.win.money:
+                    self.win.currentMode=self.win.main
+                    self.win.main.summon_clone(i)
+                    self.end()
                 return
             i+=1
     def end(self):
@@ -90,14 +87,12 @@ class mode_choosing(mode):
     def key_press(self,symbol,modifiers):
         if symbol in [key.RIGHT,key.D]:
             w=self.cframes[0].width
-            for i in range(len(self.cframes)):
-                self.cframes[i].x-=w
-                self.imgs[i].x-=w
+            for e in self.imgs+self.cframes:
+                e.x-=w
         elif symbol in [key.LEFT,key.A]:
             w=self.cframes[0].width
-            for i in range(len(self.cframes)):
-                self.cframes[i].x+=w
-                self.imgs[i].x+=w
+            for e in self.imgs+self.cframes:
+                e.x+=w
 class mapp():
     def __init__(self,mapp,batch):
         self.platforms=[]
@@ -131,7 +126,8 @@ class mode_testing(mode):
                                                                 self.clones,
                                                                 self.bullets,
                                                                 self.batch,
-                                                                self.player_side)
+                                                                self.player_side,
+                                                                self.win)
         for e in self.clones[0]:
             e.start()
         for e in self.clones[1]:
@@ -175,6 +171,14 @@ class mode_testing(mode):
 class windoo(pyglet.window.Window):
     def start(self):
         self.mainBatch = pyglet.graphics.Batch()
+        self.fpscount=pyglet.text.Label(x=5,y=5,text="aaa",color=(255,255,255,255),
+                                        group=pyglet.graphics.OrderedGroup(4),batch=self.mainBatch)
+        self.money=0
+        self.money_label=pyglet.text.Label(x=SCREEN_WIDTH-20,y=SCREEN_HEIGHT,text=str(self.money),
+                                           color=(255,255,0,255),group=pyglet.graphics.OrderedGroup(4),
+                                           anchor_x="right",anchor_y="top",batch=self.mainBatch,
+                                           font_size=int(40*SPRITE_SIZE_MULT))
+        self.sec=self.frames=0
         self.cc=mode_choosing(self,self.mainBatch)
         self.main=mode_testing(self,self.mainBatch)
         self.currentMode=self.main
@@ -187,6 +191,7 @@ class windoo(pyglet.window.Window):
         os._exit(0)
     def tick(self,dt):
         self.dispatch_events()
+        self.check(dt)
         self.currentMode.tick(dt)
     def on_key_press(self,symbol,modifiers):
         self.currentMode.key_press(symbol,modifiers)
@@ -199,7 +204,15 @@ class windoo(pyglet.window.Window):
         self.currentMode.resize(width,height)
     def on_mouse_press(self,x,y,button,modifiers):
         self.currentMode.mouse_press(x,y,button,modifiers)
-place = windoo(resizable=True,caption='test',fullscreen=False)
+    def check(self,dt):
+        self.sec+=dt
+        self.frames+=1
+        self.money_label.text=str(self.money)
+        if self.sec>1:
+            self.sec-=1
+            self.fpscount.text=str(self.frames)
+            self.frames=0
+place = windoo(resizable=True,caption='test',fullscreen=True)
 place.start()
 pyglet.clock.schedule_interval(place.tick,1.0/60)
 while True:

@@ -46,34 +46,38 @@ class clone():
         self.exists=True
         self.log_completed=0
         self.exist_time=0
-        print(self.x,self.y)
-    def take_damage(self,amount):
-        self.hp-=amount
-        if self.hp<=0:
-            self.die()
-            return
+    def take_damage(self,amount,source):
+        if self.exists:
+            self.hp-=amount
+            if self.hp<=0:
+                self.die()
+                channels.cn[1-self.side].get_money(self.cost//2+25)
     def on_ground(self):
         for e in self.mapp.platforms:
             if self.y==e.y+e.h and e.x<self.x<e.x+e.w:
                 return True
         return False
     def a_start(self):
-        if self.active:
-            self.log.append(["a",self.exist_time])
-        self.vx=-self.spd
+        if self.exists:
+            if self.active:
+                self.log.append(["a",self.exist_time])
+            self.vx=-self.spd
     def move_stop(self):
-        if self.active:
-            self.log.append(["stop",self.exist_time])
-        self.vx=0
+        if self.exists:
+            if self.active:
+                self.log.append(["stop",self.exist_time])
+            self.vx=0
     def d_start(self):
-        if self.active:
-            self.log.append(["d",self.exist_time])
-        self.vx=self.spd
+        if self.exists:
+            if self.active:
+                self.log.append(["d",self.exist_time])
+            self.vx=self.spd
     def w(self):
-        if self.active:
-            self.log.append(["w",self.exist_time])
-        if self.on_ground():
-            self.vy=self.jump
+        if self.exists:
+            if self.active:
+                self.log.append(["w",self.exist_time])
+            if self.on_ground():
+                self.vy=self.jump
     def move(self,dt):
         if self.exists:
             self.exist_time+=dt
@@ -114,7 +118,7 @@ class clone():
     def die(self):
         if self.exists:
             if self.active:
-                self.log.append(["die",self.exist_time])
+                self.log.append(["die",self.exist_time+0.1])
                 self.active=False
                 self.log.sort(key=take_second)
             self.vx=0
@@ -151,10 +155,11 @@ class BasicGuyBullet(Projectile):
     def __init__(self,x,y,vx,vy,enemies,rang,damage,l):
         super().__init__(x,y,vx,vy,enemies,rang,damage,l)
     def on_collision(self,e):
-        e.take_damage(self.damage)
+        e.take_damage(self.damage,self)
         pyglet.clock.unschedule(self.die)
         self.die(0)
 class BasicGuy(clone):
+    cost=0
     def __init__(self,mapp,l,bulletlist,side):
         super().__init__(mapp,l,hp=50,height=70,
                          width=30,spd=200,jump=600,side=side)
@@ -182,6 +187,8 @@ class BasicGuy(clone):
                          self.rang,self.dmg,self.bulletlist)
         a.move(0.05)
     def can_shoot(self):
+        if not self.exists:
+            return False
         t=self.exist_time
         if t-self.lastshot>self.aspd:
             self.lastshot=t
@@ -189,6 +196,7 @@ class BasicGuy(clone):
         return False
 ###########################################################################################################
 class Mixer(clone):
+    cost=50
     def __init__(self,mapp,l,bulletlist,side):
         super().__init__(mapp,l,hp=100,height=60,
                          width=30,spd=300,jump=700,side=side)
@@ -198,7 +206,7 @@ class Mixer(clone):
     def shoot(self,a,dt):
         for e in self.enemies:
             if e.exists and e.x-e.width/2<self.x<e.x+e.width/2 and e.y<self.y+self.height/2<e.y+e.height:
-                e.take_damage(self.dmg*dt)
+                e.take_damage(self.dmg*dt,self)
     def can_shoot(self):
         return False
     def move(self,dt):
@@ -207,6 +215,7 @@ class Mixer(clone):
             self.shoot([],dt)
 #########################################################################################################
 class Bazooka(clone):
+    cost=500
     def __init__(self,mapp,l,bulletlist,side):
         super().__init__(mapp,l,hp=150,height=65,
                          width=65,spd=200,jump=600,side=side)
@@ -235,6 +244,8 @@ class Bazooka(clone):
                          self.rang,self.dmg,self.bulletlist,self.eradius)
         a.move(0.05)
     def can_shoot(self):
+        if not self.exists:
+            return False
         t=self.exist_time
         if t-self.lastshot>self.aspd:
             self.lastshot=t
@@ -247,11 +258,12 @@ class BazookaBullet(Projectile):
     def on_collision(self,e):
         for i in self.enemies:
             if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:
-                i.take_damage(self.damage)
+                i.take_damage(self.damage,self)
         pyglet.clock.unschedule(self.die)
         self.die(0)
 ##################################################################################################################
 class Tele(clone):
+    cost=250
     def __init__(self,mapp,l,bulletlist,side):
         super().__init__(mapp,l,hp=50,height=80,
                          width=44,spd=200,jump=600,side=side)
@@ -269,6 +281,8 @@ class Tele(clone):
         self.y+=a[1]
         self.phase=0
     def can_shoot(self):
+        if not self.exists:
+            return False
         t=self.exist_time
         if t-self.lastshot>self.aspd:
             self.lastshot=t
@@ -281,7 +295,7 @@ class Tele(clone):
             if self.phase==255:
                 for i in self.enemies:
                     if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:
-                        i.take_damage(self.dmg)
+                        i.take_damage(self.dmg,self)
         else:
             super().move(dt)
     def die(self):
