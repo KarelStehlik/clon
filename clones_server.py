@@ -118,7 +118,7 @@ class clone():
     def die(self):
         if self.exists:
             if self.active:
-                self.log.append(["die",self.exist_time])
+                self.log.append(["die",self.exist_time+0.1])
                 self.active=False
                 self.log.sort(key=take_second)
             self.vx=0
