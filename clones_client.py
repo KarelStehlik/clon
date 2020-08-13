@@ -295,7 +295,7 @@ class Tele(clone):
     def __init__(self,mapp,l,bulletlist,batch,side):
         super().__init__(mapp,l,batch,hp=50,height=80,
                          width=44,spd=200,jump=600,side=side)
-        self.dmg=40
+        self.dmg=60
         self.aspd=3
         self.lastshot=0
         self.radius=200
@@ -315,7 +315,7 @@ class Tele(clone):
     def move(self,dt):
         if self.phase != 255:
             self.exist_time+=dt
-            self.phase=min(self.phase+100*dt,255)
+            self.phase=min(self.phase+150*dt,255)
             self.sprite.opacity=self.phase
             if self.phase==255:
                 for i in self.enemies:

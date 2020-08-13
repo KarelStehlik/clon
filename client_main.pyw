@@ -139,14 +139,12 @@ class mode_choosing(mode):
     def key_press(self,symbol,modifiers):
         if symbol in [key.RIGHT,key.D]:
             w=self.cframes[0].width
-            for i in range(len(self.cframes)):
-                self.cframes[i].x-=w
-                self.imgs[i].x-=w
+            for i in self.cframes+self.imgs:
+                e.x-=w
         elif symbol in [key.LEFT,key.A]:
             w=self.cframes[0].width
-            for i in range(len(self.cframes)):
-                self.cframes[i].x+=w
-                self.imgs[i].x+=w
+            for i in self.cframes+self.imgs:
+                e.x+=w
 class mappClass():
     def __init__(self,inp,batch):
         self.platforms=[]

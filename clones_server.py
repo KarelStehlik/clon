@@ -267,7 +267,7 @@ class Tele(clone):
     def __init__(self,mapp,l,bulletlist,side):
         super().__init__(mapp,l,hp=50,height=80,
                          width=44,spd=200,jump=600,side=side)
-        self.dmg=40
+        self.dmg=60
         self.aspd=3
         self.lastshot=0
         self.radius=200
@@ -291,7 +291,7 @@ class Tele(clone):
     def move(self,dt):
         if (not self.phase==255) and self.exists:
             self.exist_time+=dt
-            self.phase=min(self.phase+100*dt,255)
+            self.phase=min(self.phase+150*dt,255)
             if self.phase==255:
                 for i in self.enemies:
                     if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:
