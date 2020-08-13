@@ -105,7 +105,7 @@ class mode_choosing(mode):
             b.scale=(w/e.imageG.width)*0.8
             self.cframes.append(a)
             self.imgs.append(b)
-            c=pyglet.text.Label(x=int((i*w+30+w/2)*SPRITE_SIZE_MULT),
+            c=pyglet.text.Label(x=int(i*w+w/2+30*SPRITE_SIZE_MULT),
                                 y=490*SPRITE_SIZE_MULT,text=str(e.cost),color=(255,255,0,255),
                                 batch=self.batch,group=self.ccgroup3,font_size=int(40*SPRITE_SIZE_MULT),
                                 anchor_x="center")
@@ -116,7 +116,7 @@ class mode_choosing(mode):
         w=images.cloneFrame.width
         for e in self.cframes:
             if e.x<x<e.x+e.width and e.y<y<e.y+e.height:
-                self.select.x=int((i*w+30+w/2)*SPRITE_SIZE_MULT)
+                self.select.x=int(i*w+w/2+30*SPRITE_SIZE_MULT)
                 self.select.y=50*SPRITE_SIZE_MULT
                 if self.win.money>=clones.possible_units[i].cost:
                     connection.Send({"action":"chosen","choice":i})
