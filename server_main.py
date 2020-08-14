@@ -116,14 +116,16 @@ class mode_choosing():
         self.choices=[-1,-1]
         global mc
         mc=self
+        self.active=True
     def make_choice(self,side,c,money):
         if 0<=c<=len(clones.possible_units) and clones.possible_units[c].cost<=money:
             self.choices[side]=int(c)
-            if not self.choices[1-side] == -1:
+            if self.active and not self.choices[1-side] == -1:
                 global current_mode,mt
                 channels.cn[0].get_money(-clones.possible_units[self.choices[0]].cost)
                 channels.cn[1].get_money(-clones.possible_units[self.choices[1]].cost)
                 current_mode=mt
+                self.active=False
                 current_mode.summon_clones(self.choices[0],self.choices[1])
     def tick(self,dt):
         pass

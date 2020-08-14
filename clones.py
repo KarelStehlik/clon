@@ -35,6 +35,7 @@ class clone():
         self.exist_time=0
         l[self.side]+=[self]
         self.l=l
+        self.facing=-1
         self.hpbar_scale=self.width/images.buttonG.width
         if self.side==0:
             self.x=10
@@ -89,6 +90,7 @@ class clone():
             self.log.append(["a",self.exist_time])
         self.vx=-self.spd
         self.sprite.scale_x=-1
+        self.facing=-1
     def move_stop(self):
         if self.active:
             self.log.append(["stop",self.exist_time])
@@ -98,6 +100,7 @@ class clone():
             self.log.append(["d",self.exist_time])
         self.vx=self.spd
         self.sprite.scale_x=1
+        self.facing=1
     def w(self):
         if self.active:
             self.log.append(["w",self.exist_time])
@@ -340,6 +343,47 @@ class Tele(clone):
         self.phase=255
         self.sprite.opacity=self.phase
         super().die()
+############################################################################
+class Shield(clone):
+    cost=0
+    imageG=images.teleG
+    imageR=images.teleR
+    def __init__(self,mapp,l,bulletlist,batch,side,win):
+        super().__init__(mapp,l,batch,win,hp=500,height=110,
+                             width=70,spd=200,jump=600,side=side,
+                             cost=self.cost)
+        self.dmg=20
+        self.aspd=0.7
+        self.bspd=400
+        self.rang=400
+        self.bulletlist=bulletlist
+        self.lastshot=0
+    def shoot(self,a,dt):
+        x=a[0]
+        y=a[1]
+        if x==0:
+            vx=self.bspd
+            vy=0
+        else:
+            vx=self.bspd/math.sqrt(y**2/x**2+1)
+            if x<0:
+                vx*=-1
+            vy=vx*y/x
+        if self.active:
+            self.log.append(["shoot",self.exist_time,[x,y]])
+        a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
+                         self.rang,self.dmg,self.bulletlist,self.batch)
+        a.move(0.05)
+    def attempt_shoot(self,a,time,dt):
+        t=time
+        if t-self.lastshot>self.aspd:
+            self.shoot(a,dt)
+            self.lastshot=t
+    def take_damage(self,amount,source):
+        if (source.x>self.x and self.facing==1) or (source.x<self.x and self.facing==-1):
+            super().take_damage(amount/20,source)
+        else:
+            super().take_damage(amount,source)
 
 
-possible_units=[BasicGuy,Mixer,Bazooka,Tele]
+possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield]

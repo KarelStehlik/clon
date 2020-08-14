@@ -28,6 +28,7 @@ class clone():
         self.exist_time=0
         l[self.side]+=[self]
         self.l=l
+        self.facing=1
         if self.side==0:
             self.x=10
         else:
@@ -62,6 +63,7 @@ class clone():
             if self.active:
                 self.log.append(["a",self.exist_time])
             self.vx=-self.spd
+            self.facing=-1
     def move_stop(self):
         if self.exists:
             if self.active:
@@ -72,6 +74,7 @@ class clone():
             if self.active:
                 self.log.append(["d",self.exist_time])
             self.vx=self.spd
+            self.facing=1
     def w(self):
         if self.exists:
             if self.active:
@@ -301,6 +304,48 @@ class Tele(clone):
     def die(self):
         self.phase=255
         super().die()
+#####################################################################
+class Shield(clone):
+    cost=400
+    def __init__(self,mapp,l,bulletlist,side):
+        super().__init__(mapp,l,hp=500,height=110,
+                         width=70,spd=100,jump=400,side=side)
+        self.dmg=20
+        self.aspd=1
+        self.bspd=300
+        self.rang=300
+        self.bulletlist=bulletlist
+        self.lastshot=0
+    def shoot(self,a,dt):
+        if self.active:
+            channels.send_both({"action":"shoot","a":a,"side":self.side})
+            self.log.append(["shoot",self.exist_time,a])
+        x=a[0]
+        y=a[1]
+        if x==0:
+            vx=self.bspd
+            vy=0
+        else:
+            vx=self.bspd/math.sqrt(y**2/x**2+1)
+            if x<0:
+                vx*=-1
+            vy=vx*y/x
+        a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
+                         self.rang,self.dmg,self.bulletlist)
+        a.move(0.05)
+    def can_shoot(self):
+        if not self.exists:
+            return False
+        t=self.exist_time
+        if t-self.lastshot>self.aspd:
+            self.lastshot=t
+            return True
+        return False
+    def take_damage(self,amount,source):
+        if (source.x>self.x and self.facing==1) or (source.x<self.x and self.facing==-1):
+            super().take_damage(amount/4,source)
+        else:
+            super().take_damage(amount,source)
 
 
-possible_units=[BasicGuy,Mixer,Bazooka,Tele]
+possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield]

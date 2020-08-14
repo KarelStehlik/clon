@@ -32,6 +32,7 @@ class clone():
         self.exist_time=0
         l[self.side]+=[self]
         self.l=l
+        self.facing=1
         self.hpbar_scale=SPRITE_SIZE_MULT*self.width/images.buttonG.width
         if self.side==0:
             self.x=10
@@ -47,7 +48,7 @@ class clone():
         self.additional_images.append([pyglet.sprite.Sprite(arro,
                                                            x=self.x*SPRITE_SIZE_MULT,
                                                            y=(self.y+self.height+10)*SPRITE_SIZE_MULT,
-                                                            group=dudeg,batch=self.batch),
+                                                            group=pyglet.graphics.OrderedGroup(3),batch=self.batch),
                                        0,self.height+10])
     def start(self):
         if self.side==0:
@@ -86,6 +87,7 @@ class clone():
         if self.exists:
             self.vx=-self.spd
             self.sprite.scale_x=-1
+            self.facing=-1
     def move_stop(self):
         if self.exists:
             self.vx=0
@@ -93,6 +95,7 @@ class clone():
         if self.exists:
             self.vx=self.spd
             self.sprite.scale_x=1
+            self.facing=1
     def w(self):
         if self.on_ground() and self.exists:
             self.vy=self.jump
@@ -327,6 +330,45 @@ class Tele(clone):
         self.phase=255
         self.sprite.opacity=self.phase
         super().die()
+##########################################################################
+class Shield(clone):
+    cost=400
+    imageG=images.gunmanG
+    imageR=images.gunmanR
+    def __init__(self,mapp,l,bulletlist,batch,side):
+        super().__init__(mapp,l,batch,hp=500,height=110,
+                         width=70,spd=100,jump=400,side=side)
+        self.dmg=20
+        self.aspd=1
+        self.bspd=300
+        self.rang=300
+        self.bulletlist=bulletlist
+        self.lastshot=0
+    def shoot(self,a,dt):
+        x=a[0]
+        y=a[1]
+        if x==0:
+            vx=self.bspd
+            vy=0
+        else:
+            vx=self.bspd/math.sqrt(y**2/x**2+1)
+            if x<0:
+                vx*=-1
+            vy=vx*y/x
+        a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
+                         self.rang,self.dmg,self.bulletlist,self.batch)
+        a.move(0.05)
+    def can_shoot(self):
+        t=self.exist_time
+        if t-self.lastshot>self.aspd and self.exists:
+            self.lastshot=t
+            return True
+        return False
+    def take_damage(self,amount,source):
+        if (source.x>self.x and self.facing==1) or (source.x<self.x and self.facing==-1):
+            super().take_damage(amount/4,source)
+        else:
+            super().take_damage(amount,source)
 
 
-possible_units=[BasicGuy,Mixer,Bazooka,Tele]
+possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield]
