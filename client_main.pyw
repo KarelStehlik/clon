@@ -214,8 +214,12 @@ class mode_testing(mode):
         if symbol==key.W:
             connection.Send({"action": "jump"})
     def key_release(self,symbol,modifiers):
-        if symbol==key.A or symbol==key.D:
+        if (symbol==key.A and not self.win.keys[key.D]) or (symbol==key.D and not self.win.keys[key.A]):
             connection.Send({"action": "stop"})
+        elif symbol==key.A:
+            self.current_clones[self.player_side].d_start()
+        elif symbol==key.D:
+            self.current_clones[self.player_side].a_start()
 
 class windoo(pyglet.window.Window):
     def start(self):
@@ -231,6 +235,8 @@ class windoo(pyglet.window.Window):
         self.cc=mode_choosing(self,self.mainBatch)
         self.main=mode(self,self.mainBatch)
         self.current_mode=self.main
+        self.keys = key.KeyStateHandler()
+        self.push_handlers(self.keys)
     def on_mouse_motion(self,x, y, dx, dy):
         self.current_mode.mouse_move(x,y,dx,dy)
     def on_mouse_drag(self,x,y,dx,dy,button,modifiers):

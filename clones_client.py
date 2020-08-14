@@ -333,8 +333,8 @@ class Tele(clone):
 ##########################################################################
 class Shield(clone):
     cost=400
-    imageG=images.gunmanG
-    imageR=images.gunmanR
+    imageG=images.ShieldG
+    imageR=images.ShieldR
     def __init__(self,mapp,l,bulletlist,batch,side):
         super().__init__(mapp,l,batch,hp=500,height=110,
                          width=70,spd=100,jump=400,side=side)

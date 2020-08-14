@@ -8,6 +8,8 @@ teleG=pyglet.resource.image("imagefolder/GTele.png")
 teleR=pyglet.resource.image("imagefolder/BTele.png")
 ZookaG=pyglet.resource.image("imagefolder/GZooka.png")
 ZookaR=pyglet.resource.image("imagefolder/BZooka.png")
+ShieldG=pyglet.resource.image("imagefolder/GShield.png").get_transform(flip_x=True)
+ShieldR=pyglet.resource.image("imagefolder/BShield.png").get_transform(flip_x=True)
 gunmanG.width=40*SPRITE_SIZE_MULT
 gunmanG.height=70*SPRITE_SIZE_MULT
 gunmanR.width=40*SPRITE_SIZE_MULT
@@ -26,6 +28,12 @@ ZookaG.height=68*SPRITE_SIZE_MULT
 ZookaR.anchor_x=55*SPRITE_SIZE_MULT
 ZookaR.width=200*SPRITE_SIZE_MULT
 ZookaR.height=68*SPRITE_SIZE_MULT
+ShieldG.width=70*SPRITE_SIZE_MULT
+ShieldR.width=70*SPRITE_SIZE_MULT
+ShieldG.height=110*SPRITE_SIZE_MULT
+ShieldR.height=110*SPRITE_SIZE_MULT
+ShieldG.anchor_x=20*SPRITE_SIZE_MULT
+ShieldR.anchor_x=20*SPRITE_SIZE_MULT
 for e in [gunmanG,gunmanR,mixerG,mixerR,teleG,teleR]:
     e.anchor_x=e.width//2
 gunmanG.anchor_x-=5*SPRITE_SIZE_MULT
