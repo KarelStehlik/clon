@@ -165,8 +165,12 @@ class mode_testing(mode):
        #     self.current_clones[self.player_side].bspd=1000
        #     self.current_clones[self.player_side].rang=1500
     def key_release(self,symbol,modifiers):
-        if symbol==key.A or symbol==key.D:
+        if (symbol==key.A and not self.win.keys[key.D]) or (symbol==key.D and not self.win.keys[key.A]):
             self.current_clones[self.player_side].move_stop()
+        elif symbol==key.A:
+            self.current_clones[self.player_side].d_start()
+        elif symbol==key.D:
+            self.current_clones[self.player_side].a_start()
 
 class windoo(pyglet.window.Window):
     def start(self):
@@ -182,6 +186,8 @@ class windoo(pyglet.window.Window):
         self.cc=mode_choosing(self,self.mainBatch)
         self.main=mode_testing(self,self.mainBatch)
         self.currentMode=self.main
+        self.keys = key.KeyStateHandler()
+        self.push_handlers(self.keys)
     def on_mouse_motion(self,x, y, dx, dy):
         self.currentMode.mouse_move(x,y,dx,dy)
     def on_mouse_drag(self,x,y,dx,dy,button,modifiers):
@@ -193,6 +199,7 @@ class windoo(pyglet.window.Window):
         self.dispatch_events()
         self.check(dt)
         self.currentMode.tick(dt)
+        #print(self.keys[key.W])
     def on_key_press(self,symbol,modifiers):
         self.currentMode.key_press(symbol,modifiers)
     def on_key_release(self,symbol,modifiers):
