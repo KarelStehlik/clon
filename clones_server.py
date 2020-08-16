@@ -106,7 +106,7 @@ class clone():
                             return
                     else:
                         break
-            self.x+=self.vx*dt
+            self.x=min(max(self.x+self.vx*dt,0),1280)
             ycap=0
             for e in self.mapp.platforms:
                 if self.y>e.y and self.vy<0 and rect_intersect(self.x,
