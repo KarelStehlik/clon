@@ -3,6 +3,7 @@ import pyglet
 import time
 import numpy as np
 import math
+import random
 from constants import *
 import serverchannels as channels
 dudeg=pyglet.graphics.OrderedGroup(2)
@@ -346,6 +347,51 @@ class Shield(clone):
             super().take_damage(amount/4,source)
         else:
             super().take_damage(amount,source)
+##########################################################################################################################################
+class Sprayer(clone):
+    cost=500
+    def __init__(self,mapp,l,bulletlist,side):
+        super().__init__(mapp,l,hp=50,height=70,
+                         width=30,spd=200,jump=600,side=side)
+        self.dmg=20
+        self.aspd=10
+        self.bspd=400
+        self.rang=400
+        self.bulletlist=bulletlist
+        self.lastshot=0
+    def shoot(self,a,dt):
+        if self.active:
+            bullet_data=[]
+            for i in range(500):
+                x=random.random()*random.choice([-1,1])
+                y=random.random()*random.choice([-1,1])
+                v=random.randint(int(self.bspd/1.1),self.bspd)
+                if x==0:
+                    vx=v
+                    vy=0
+                else:
+                    vx=v/math.sqrt(y**2/x**2+1)
+                    if x<0:
+                        vx*=-1
+                    vy=vx*y/x
+                bul=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
+                                     self.rang,self.dmg,self.bulletlist)
+                bullet_data.append([vx,vy])
+            channels.send_both({"action":"shoot","a":bullet_data,"side":self.side})
+            self.log.append(["shoot",self.exist_time,bullet_data])
+        else:
+            for e in a:
+                bul=BasicGuyBullet(self.x,self.y+self.height/2,e[0],e[1],self.l[1-self.side],
+                                     self.rang,self.dmg,self.bulletlist)
+                bul.move(0.05)
+    def can_shoot(self):
+        if not self.exists:
+            return False
+        t=self.exist_time
+        if t-self.lastshot>self.aspd:
+            self.lastshot=t
+            return True
+        return False
 
 
-possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield]
+possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer]

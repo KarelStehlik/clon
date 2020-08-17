@@ -3,6 +3,7 @@ import pyglet
 import time
 import numpy as np
 import math
+import random
 from constants import *
 dudeg=pyglet.graphics.OrderedGroup(2)
 def rect_intersect(ax1,ay1,ax2,ay2,bx1,by1,bx2,by2):
@@ -369,6 +370,29 @@ class Shield(clone):
             super().take_damage(amount/4,source)
         else:
             super().take_damage(amount,source)
+##############################################################################
+class Sprayer(clone):
+    cost=500
+    imageG=images.sprayerG
+    imageR=images.sprayerR
+    def __init__(self,mapp,l,bulletlist,batch,side):
+        super().__init__(mapp,l,batch,hp=50,height=70,
+                         width=30,spd=200,jump=600,side=side)
+        self.dmg=20
+        self.aspd=10
+        self.rang=400
+        self.bulletlist=bulletlist
+        self.lastshot=0
+    def shoot(self,a,dt):
+        for e in a:
+            bul=BasicGuyBullet(self.x,self.y+self.height/2,e[0],e[1],self.l[1-self.side],
+                             self.rang,self.dmg,self.bulletlist,self.batch)
+    def can_shoot(self):
+        t=self.exist_time
+        if t-self.lastshot>self.aspd and self.exists:
+            self.lastshot=t
+            return True
+        return False
 
 
-possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield]
+possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer]
