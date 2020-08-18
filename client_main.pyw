@@ -215,17 +215,15 @@ class mode_testing(mode):
                     connection.Send({"action": "shoot",
                                      "a": [self.mousex/SPRITE_SIZE_MULT+cx-a.x,
                                      self.mousey/SPRITE_SIZE_MULT-a.y-a.height/2]})
+            clones.camx=cx
             for e in self.clones[0]:
-                e.camx=cx
                 e.move(dt)
                 e.vy-=self.gravity*dt
             for e in self.clones[1]:
-                e.camx=cx
                 e.move(dt)
                 e.vy-=self.gravity*dt
             self.mapp.update(cx)
             for e in self.bullets:
-                e.camx=cx
                 e.move(dt)
             super().tick(dt)
     def key_press(self,symbol,modifiers):

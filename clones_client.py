@@ -6,6 +6,7 @@ import math
 import random
 from constants import *
 dudeg=pyglet.graphics.OrderedGroup(2)
+camx=0
 def rect_intersect(ax1,ay1,ax2,ay2,bx1,by1,bx2,by2):
     return ax1<=bx2 and bx1<=ax2 and ay1<=by2 and by1<=ay2
 def take_second(l):
@@ -34,7 +35,6 @@ class clone():
         l[self.side]+=[self]
         self.l=l
         self.facing=1
-        self.camx=0
         self.hpbar_scale=SPRITE_SIZE_MULT*self.width/images.buttonG.width
         if self.side==0:
             self.x=10
@@ -75,11 +75,11 @@ class clone():
         if not self.active:
             self.update_health(self.hp-amount)
     def update_pos(self,x,y):
-        self.sprite.update(x=(x-self.camx)*SPRITE_SIZE_MULT,y=y*SPRITE_SIZE_MULT)
-        self.hpbar.update(x=(x-self.width//2-self.camx)*SPRITE_SIZE_MULT,y=(y+self.height)*SPRITE_SIZE_MULT)
+        self.sprite.update(x=(x-camx)*SPRITE_SIZE_MULT,y=y*SPRITE_SIZE_MULT)
+        self.hpbar.update(x=(x-self.width//2-camx)*SPRITE_SIZE_MULT,y=(y+self.height)*SPRITE_SIZE_MULT)
         self.x,self.y=x,y
         for e in self.additional_images:
-            e[0].update(x=(self.x+e[1]-self.camx)*SPRITE_SIZE_MULT,y=(self.y+e[2])*SPRITE_SIZE_MULT)
+            e[0].update(x=(self.x+e[1]-camx)*SPRITE_SIZE_MULT,y=(self.y+e[2])*SPRITE_SIZE_MULT)
     def on_ground(self):
         for e in self.mapp.platforms:
             if self.y==e.y+e.h and e.x<self.x<e.x+e.w:
@@ -160,13 +160,12 @@ class Projectile():
         self.speed=math.sqrt(self.vx**2+self.vy**2)
         pyglet.clock.schedule_once(self.die,self.rang/self.speed)
         self.damage=damage
-        self.camx=0
     def move(self,dt):
         self.x+=self.vx*dt
         self.y+=self.vy*dt
         if self.collide():
             return
-        self.sprite.update(x=SPRITE_SIZE_MULT*(self.x-self.camx),y=SPRITE_SIZE_MULT*self.y)
+        self.sprite.update(x=SPRITE_SIZE_MULT*(self.x-camx),y=SPRITE_SIZE_MULT*self.y)
     def collide(self):
         for e in self.enemies:
             if e.exists and e.x-e.width/2<self.x<e.x+e.width/2 and e.y<self.y<e.y+e.height:
@@ -321,6 +320,7 @@ class Tele(clone):
     def move(self,dt):
         if self.phase != 255:
             self.exist_time+=dt
+            self.update_pos(self.x,self.y)
             self.phase=min(self.phase+150*dt,255)
             self.sprite.opacity=self.phase
             if self.phase==255:
