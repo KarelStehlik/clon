@@ -4,6 +4,8 @@ gunmanR=pyglet.resource.image("imagefolder/BGunman.png")
 gunmanG=pyglet.resource.image("imagefolder/GGunman.png")
 mixerR=pyglet.resource.image("imagefolder/BMixer.png")
 mixerG=pyglet.resource.image("imagefolder/GMixer.png")
+megamixerR=pyglet.resource.image("imagefolder/BMegaMixer.png")
+megamixerG=pyglet.resource.image("imagefolder/GMegaMixer.png")
 teleG=pyglet.resource.image("imagefolder/GTele.png")
 teleR=pyglet.resource.image("imagefolder/BTele.png")
 ZookaG=pyglet.resource.image("imagefolder/GZooka.png")
@@ -28,6 +30,11 @@ mixerG.height=60*SPRITE_SIZE_MULT
 mixerR.width=35*SPRITE_SIZE_MULT
 mixerR.height=60*SPRITE_SIZE_MULT
 
+megamixerG.width=200*SPRITE_SIZE_MULT
+megamixerG.height=300*SPRITE_SIZE_MULT
+megamixerR.width=200*SPRITE_SIZE_MULT
+megamixerR.height=300*SPRITE_SIZE_MULT
+
 teleG.width=50*SPRITE_SIZE_MULT
 teleG.height=80*SPRITE_SIZE_MULT
 teleR.width=50*SPRITE_SIZE_MULT
@@ -48,7 +55,8 @@ ShieldR.height=110*SPRITE_SIZE_MULT
 ShieldG.anchor_x=20*SPRITE_SIZE_MULT
 ShieldR.anchor_x=20*SPRITE_SIZE_MULT
 
-for e in [gunmanG,gunmanR,mixerG,mixerR,teleG,teleR,sprayerG,sprayerR]:
+for e in [gunmanG,gunmanR,mixerG,mixerR,teleG,teleR,sprayerG,sprayerR,megamixerG,
+          megamixerR]:
     e.anchor_x=e.width//2
 gunmanG.anchor_x-=5*SPRITE_SIZE_MULT
 gunmanR.anchor_x-=5*SPRITE_SIZE_MULT

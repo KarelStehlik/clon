@@ -73,12 +73,12 @@ class clone():
     def take_damage(self,amount,source):
         if not self.active:
             self.update_health(self.hp-amount)
-    def update_pos(self,x,y):
-        self.sprite.update(x=x*SPRITE_SIZE_MULT,y=y*SPRITE_SIZE_MULT)
-        self.hpbar.update(x=(x-self.width//2)*SPRITE_SIZE_MULT,y=(y+self.height)*SPRITE_SIZE_MULT)
+    def update_pos(self,x,y,camx):
+        self.sprite.update(x=(x-camx)*SPRITE_SIZE_MULT,y=y*SPRITE_SIZE_MULT)
+        self.hpbar.update(x=(x-self.width//2-camx)*SPRITE_SIZE_MULT,y=(y+self.height)*SPRITE_SIZE_MULT)
         self.x,self.y=x,y
         for e in self.additional_images:
-            e[0].update(x=(self.x+e[1])*SPRITE_SIZE_MULT,y=(self.y+e[2])*SPRITE_SIZE_MULT)
+            e[0].update(x=(self.x+e[1]-camx)*SPRITE_SIZE_MULT,y=(self.y+e[2])*SPRITE_SIZE_MULT)
     def on_ground(self):
         for e in self.mapp.platforms:
             if self.y==e.y+e.h and e.x<self.x<e.x+e.w:
@@ -100,7 +100,7 @@ class clone():
     def w(self):
         if self.on_ground() and self.exists:
             self.vy=self.jump
-    def move(self,dt):
+    def move(self,dt,camx):
         if self.exists:
             self.exist_time+=dt
             if not self.active:
@@ -122,8 +122,8 @@ class clone():
                             return
                     else:
                         break
-                self.x=min(max(self.x+self.vx*dt,0),1280)
-                ycap=0
+                self.x=self.x+self.vx*dt
+                ycap=-500
                 for e in self.mapp.platforms:
                     if self.y>e.y and self.vy<0 and rect_intersect(self.x,
                                                                    self.y+self.vy*dt,
@@ -132,9 +132,11 @@ class clone():
                                                                    e.x,e.y+e.h,e.x+e.w,e.y+e.h):
                         ycap=max(e.y+e.h,ycap)
                 self.y=max(ycap,self.y+self.vy*dt)
-                if not ycap==0:
+                if not ycap==-500:
                     self.vy=0
-            self.update_pos(self.x,self.y)
+                if self.y<=-500:
+                    self.die()
+            self.update_pos(self.x,self.y,camx)
     def die(self):
         if self.exists:
             if self.active:
@@ -157,12 +159,12 @@ class Projectile():
         self.speed=math.sqrt(self.vx**2+self.vy**2)
         pyglet.clock.schedule_once(self.die,self.rang/self.speed)
         self.damage=damage
-    def move(self,dt):
+    def move(self,dt,camx):
         self.x+=self.vx*dt
         self.y+=self.vy*dt
         if self.collide():
             return
-        self.sprite.update(x=SPRITE_SIZE_MULT*self.x,y=SPRITE_SIZE_MULT*self.y)
+        self.sprite.update(x=SPRITE_SIZE_MULT*(self.x-camx),y=SPRITE_SIZE_MULT*self.y)
     def collide(self):
         for e in self.enemies:
             if e.exists and e.x-e.width/2<self.x<e.x+e.width/2 and e.y<self.y<e.y+e.height:
@@ -209,7 +211,6 @@ class BasicGuy(clone):
             vy=vx*y/x
         a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
                          self.rang,self.dmg,self.bulletlist,self.batch)
-        a.move(0.05)
     def can_shoot(self):
         t=self.exist_time
         if t-self.lastshot>self.aspd and self.exists:
@@ -233,8 +234,8 @@ class Mixer(clone):
                 e.take_damage(self.dmg*dt,self)
     def can_shoot(self):
         return False
-    def move(self,dt):
-        super().move(dt)
+    def move(self,dt,camx):
+        super().move(dt,camx)
         if self.exists:
             self.shoot([],dt)
 #########################################################################################################
@@ -265,7 +266,6 @@ class Bazooka(clone):
             vy=vx*y/x
         a=BazookaBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
                          self.rang,self.dmg,self.bulletlist,self.batch,self.eradius)
-        a.move(0.05)
     def can_shoot(self):
         t=self.exist_time
         if t-self.lastshot>self.aspd and self.exists:
@@ -316,7 +316,7 @@ class Tele(clone):
             self.lastshot=t
             return True
         return False
-    def move(self,dt):
+    def move(self,dt,camx):
         if self.phase != 255:
             self.exist_time+=dt
             self.phase=min(self.phase+150*dt,255)
@@ -326,7 +326,7 @@ class Tele(clone):
                     if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:
                         i.take_damage(self.dmg,self)
         else:
-            super().move(dt)
+            super().move(dt,camx)
     def die(self):
         self.phase=255
         self.sprite.opacity=self.phase
@@ -358,7 +358,6 @@ class Shield(clone):
             vy=vx*y/x
         a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
                          self.rang,self.dmg,self.bulletlist,self.batch)
-        a.move(0.05)
     def can_shoot(self):
         t=self.exist_time
         if t-self.lastshot>self.aspd and self.exists:
@@ -393,6 +392,35 @@ class Sprayer(clone):
             self.lastshot=t
             return True
         return False
+#########################################################################################
+class MegaMixer(clone):
+    cost=100000
+    imageG=images.megamixerG
+    imageR=images.megamixerR
+    def __init__(self,mapp,l,bulletlist,batch,side):
+        super().__init__(mapp,l,batch,hp=50000,height=300,
+                         width=200,spd=300,jump=700,side=side)
+        self.dmg=10000
+        self.enemies=l[1-self.side]
+        self.succ=100
+    def shoot(self,a,dt):
+        for e in self.enemies:
+            if e.exists:
+                if e.x<self.x:
+                    e.x+=self.succ*dt
+                else:
+                    e.x-=self.succ*dt
+                if e.y>self.y+self.height:
+                    e.y-=self.succ*dt
+                if rect_intersect(self.x-self.width/2,self.y,self.x+self.width/2,self.y+self.height,
+                                  e.x-e.width/2,e.y,e.x+e.width/2,e.y+e.height):
+                    e.take_damage(self.dmg*dt,self)
+    def can_shoot(self):
+        return False
+    def move(self,dt,camx):
+        super().move(dt,camx)
+        if self.exists:
+            self.shoot([],dt)
 
 
-possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer]
+possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MegaMixer]

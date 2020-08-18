@@ -107,8 +107,8 @@ class clone():
                             return
                     else:
                         break
-            self.x=min(max(self.x+self.vx*dt,0),1280)
-            ycap=0
+            self.x=self.x+self.vx*dt
+            ycap=-500
             for e in self.mapp.platforms:
                 if self.y>e.y and self.vy<0 and rect_intersect(self.x,
                                                                self.y+self.vy*dt,
@@ -117,8 +117,10 @@ class clone():
                                                                e.x,e.y+e.h,e.x+e.w,e.y+e.h):
                     ycap=max(e.y+e.h,ycap)
             self.y=max(ycap,self.y+self.vy*dt)
-            if not ycap==0:
+            if not ycap==-500:
                 self.vy=0
+            if self.y<=-500:
+                self.die()
     def die(self):
         if self.exists:
             if self.active:
@@ -189,7 +191,6 @@ class BasicGuy(clone):
             vy=vx*y/x
         a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
                          self.rang,self.dmg,self.bulletlist)
-        a.move(0.05)
     def can_shoot(self):
         if not self.exists:
             return False
@@ -246,7 +247,6 @@ class Bazooka(clone):
             vy=vx*y/x
         a=BazookaBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
                          self.rang,self.dmg,self.bulletlist,self.eradius)
-        a.move(0.05)
     def can_shoot(self):
         if not self.exists:
             return False
@@ -333,7 +333,6 @@ class Shield(clone):
             vy=vx*y/x
         a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
                          self.rang,self.dmg,self.bulletlist)
-        a.move(0.05)
     def can_shoot(self):
         if not self.exists:
             return False
@@ -383,7 +382,6 @@ class Sprayer(clone):
             for e in a:
                 bul=BasicGuyBullet(self.x,self.y+self.height/2,e[0],e[1],self.l[1-self.side],
                                      self.rang,self.dmg,self.bulletlist)
-                bul.move(0.05)
     def can_shoot(self):
         if not self.exists:
             return False
@@ -392,6 +390,34 @@ class Sprayer(clone):
             self.lastshot=t
             return True
         return False
+###########################################################
+class MegaMixer(clone):
+    cost=100000
+    def __init__(self,mapp,l,bulletlist,side):
+        super().__init__(mapp,l,hp=50000,height=300,
+                         width=200,spd=300,jump=700,side=side)
+        self.dmg=10000
+        self.enemies=l[1-self.side]
+        self.succ=100
+    def shoot(self,a,dt):
+        for e in self.enemies:
+            if e.exists:
+                if e.x<self.x:
+                    e.x+=self.succ*dt
+                else:
+                    e.x-=self.succ*dt
+                if e.y>self.y+self.height:
+                    e.y-=self.succ*dt
+                if rect_intersect(self.x-self.width/2,self.y,self.x+self.width/2,self.y+self.height,
+                                  e.x-e.width/2,e.y,e.x+e.width/2,e.y+e.height):
+                    e.take_damage(self.dmg*dt,self)
+    def can_shoot(self):
+        return False
+    def move(self,dt):
+        super().move(dt)
+        if self.exists:
+            self.shoot([],dt)
 
 
-possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer]
+
+possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MegaMixer]

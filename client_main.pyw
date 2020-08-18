@@ -9,37 +9,48 @@ class MyNetworkListener(ConnectionListener):
         super().__init__()
         self.start=False
     def Network_assign_side(self,data):
+        #print(data["action"])
         global side
         side=data["s"]
     def Network_start(self,data):
+        #print(data["action"])
         self.start=True
         place.main=place.current_mode=mode_testing(place,place.mainBatch,mapp=data["mapp"])
     def Network_stop(self,data):
+        #print(data["action"])
         place.main.current_clones[data["side"]].move_stop()
     def Network_A(self,data):
+        #print(data["action"])
         place.main.current_clones[data["side"]].a_start()
     def Network_D(self,data):
+        #print(data["action"])
         place.main.current_clones[data["side"]].d_start()
     def Network_jump(self,data):
+        #print(data["action"])
         place.main.current_clones[data["side"]].w()
     def Network_summon(self,data):
+        #print(data["action"])
         place.main.summon_clone(data["c"],data["s"])
     def Network_start_round(self,data):
+        #print(data["action"])
         place.cc.end()
         place.main.start_round()
     def Network_endround(self,data):
+        #print(data["action"])
         place.main.current_clones[0].die()
         place.main.current_clones[1].die()
         place.main.current_clones[0].log=data["log0"]
         place.main.current_clones[1].log=data["log1"]
         place.cc.start(side)
     def Network_shoot(self,data):
+        #print(data["action"])
         place.main.current_clones[data["side"]].shoot(data["a"],0)
     def Network_update(self,data):
+        #print(data["action"])
         place.main.current_clones[0].update_health(data["hp0"])
         place.main.current_clones[1].update_health(data["hp1"])
-        place.main.current_clones[0].update_pos(data["x0"],data["y0"])
-        place.main.current_clones[1].update_pos(data["x1"],data["y1"])
+        place.main.current_clones[0].update_pos(data["x0"],data["y0"],place.main.camx)
+        place.main.current_clones[1].update_pos(data["x1"],data["y1"],place.main.camx)
     def Network_update_money(self,data):
         place.money=data["money"]
 nwl=MyNetworkListener()
@@ -154,10 +165,14 @@ class mappClass():
         self.platforms=[]
         for e in inp:
             self.platforms.append(e.batch(batch))
+    def update(self,camx):
+        for e in self.platforms:
+            e.pic.x=e.x-camx*SPRITE_SIZE_MULT
 class mode_testing(mode):
     def __init__(self,win,batch,**kw):
         super().__init__(win,batch)
         self.player_side=0
+        self.camx=0
         self.batch=batch
         bg=pyglet.graphics.OrderedGroup(0)
         self.background=batch.add(4,pyglet.gl.GL_QUADS,bg,
@@ -189,22 +204,25 @@ class mode_testing(mode):
     def mouse_drag(self,x, y, dx, dy, button, modifiers):
         self.mouse_move(x,y,dx,dy)
     def tick(self,dt):
+        global side
         self.total_time+=dt
+        self.camx=self.current_clones[side].x-1280/2
+        cx=self.camx
         if self.win.mouseheld:
-            global side
             a=self.current_clones[side]
             if a.can_shoot():
                 connection.Send({"action": "shoot",
-                                 "a": [self.mousex/SPRITE_SIZE_MULT-a.x,
+                                 "a": [self.mousex/SPRITE_SIZE_MULT+cx-a.x,
                                  self.mousey/SPRITE_SIZE_MULT-a.y-a.height/2]})
         for e in self.clones[0]:
-            e.move(dt)
+            e.move(dt,cx)
             e.vy-=self.gravity*dt
         for e in self.clones[1]:
-            e.move(dt)
+            e.move(dt,cx)
             e.vy-=self.gravity*dt
+        self.mapp.update(cx)
         for e in self.bullets:
-            e.move(dt)
+            e.move(dt,cx)
         super().tick(dt)
     def key_press(self,symbol,modifiers):
         if symbol==key.A:
