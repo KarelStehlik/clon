@@ -296,7 +296,7 @@ class windoo(pyglet.window.Window):
             self.sec-=1
             self.fpscount.text=str(self.frames)
             self.frames=0
-place = windoo(resizable=True,caption='test',fullscreen=False)
+place = windoo(resizable=True,caption='test',fullscreen=True)
 place.start()
 pyglet.clock.schedule_interval(place.tick,1.0/60)
 
