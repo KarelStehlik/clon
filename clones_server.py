@@ -121,6 +121,7 @@ class clone():
                 self.vy=0
             if self.y<=-500:
                 self.die()
+                channels.cn[1-self.side].get_money(self.cost//2+25)
     def die(self):
         if self.exists:
             if self.active:

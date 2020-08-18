@@ -167,7 +167,7 @@ class mappClass():
             self.platforms.append(e.batch(batch))
     def update(self,camx):
         for e in self.platforms:
-            e.pic.x=e.x-camx*SPRITE_SIZE_MULT
+            e.pic.x=(e.x-camx)*SPRITE_SIZE_MULT
 class mode_testing(mode):
     def __init__(self,win,batch,**kw):
         super().__init__(win,batch)
