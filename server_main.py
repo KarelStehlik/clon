@@ -136,11 +136,7 @@ mt=mode_testing(mapp=mappNum)
 current_mode=mt
 pyglet.clock.schedule_interval(current_mode.tick,1.0/60)
 print("starting game")
-t=1
 while True:
-    t+=1
-    if t%3000==0:
-        t=0
     srvr.Pump()
     for e in channels.cn:
         e.Pump()

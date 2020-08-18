@@ -49,8 +49,8 @@ class MyNetworkListener(ConnectionListener):
         #print(data["action"])
         place.main.current_clones[0].update_health(data["hp0"])
         place.main.current_clones[1].update_health(data["hp1"])
-        place.main.current_clones[0].update_pos(data["x0"],data["y0"],place.main.camx)
-        place.main.current_clones[1].update_pos(data["x1"],data["y1"],place.main.camx)
+        place.main.current_clones[0].update_pos(data["x0"],data["y0"])
+        place.main.current_clones[1].update_pos(data["x1"],data["y1"])
     def Network_update_money(self,data):
         place.money=data["money"]
 nwl=MyNetworkListener()
@@ -205,25 +205,29 @@ class mode_testing(mode):
         self.mouse_move(x,y,dx,dy)
     def tick(self,dt):
         global side
-        self.total_time+=dt
-        self.camx=self.current_clones[side].x-1280/2
-        cx=self.camx
-        if self.win.mouseheld:
-            a=self.current_clones[side]
-            if a.can_shoot():
-                connection.Send({"action": "shoot",
-                                 "a": [self.mousex/SPRITE_SIZE_MULT+cx-a.x,
-                                 self.mousey/SPRITE_SIZE_MULT-a.y-a.height/2]})
-        for e in self.clones[0]:
-            e.move(dt,cx)
-            e.vy-=self.gravity*dt
-        for e in self.clones[1]:
-            e.move(dt,cx)
-            e.vy-=self.gravity*dt
-        self.mapp.update(cx)
-        for e in self.bullets:
-            e.move(dt,cx)
-        super().tick(dt)
+        if not self.current_clones[side]==None:
+            self.total_time+=dt
+            self.camx=self.current_clones[side].x-1280/2
+            cx=self.camx
+            if self.win.mouseheld:
+                a=self.current_clones[side]
+                if a.can_shoot():
+                    connection.Send({"action": "shoot",
+                                     "a": [self.mousex/SPRITE_SIZE_MULT+cx-a.x,
+                                     self.mousey/SPRITE_SIZE_MULT-a.y-a.height/2]})
+            for e in self.clones[0]:
+                e.camx=cx
+                e.move(dt)
+                e.vy-=self.gravity*dt
+            for e in self.clones[1]:
+                e.camx=cx
+                e.move(dt)
+                e.vy-=self.gravity*dt
+            self.mapp.update(cx)
+            for e in self.bullets:
+                e.camx=cx
+                e.move(dt)
+            super().tick(dt)
     def key_press(self,symbol,modifiers):
         if symbol==key.A:
             connection.Send({"action": "A"})
@@ -292,7 +296,7 @@ class windoo(pyglet.window.Window):
             self.sec-=1
             self.fpscount.text=str(self.frames)
             self.frames=0
-place = windoo(resizable=True,caption='test',fullscreen=True)
+place = windoo(resizable=True,caption='test',fullscreen=False)
 place.start()
 pyglet.clock.schedule_interval(place.tick,1.0/60)
 
