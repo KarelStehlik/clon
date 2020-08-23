@@ -420,7 +420,7 @@ class MegaMixer(clone):
             self.shoot([],dt)
 ################################################################
 class Smash(clone):
-    cost=0
+    cost=2000
     def __init__(self,mapp,l,bulletlist,side):
         super().__init__(mapp,l,hp=1500,height=120,
                          width=80,spd=150,jump=600,side=side)

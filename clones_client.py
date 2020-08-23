@@ -425,7 +425,7 @@ class MegaMixer(clone):
             self.shoot([],dt)
 ####################################################################
 class Smash(clone):
-    cost=0
+    cost=2000
     imageG=images.SmashG
     imageR=images.SmashR
     def __init__(self,mapp,l,bulletlist,batch,side):
