@@ -499,7 +499,7 @@ class Smash(clone):
     def die(self):
         self.sprite.batch=None
         self.sprite=self.spryte
-        self.sprite.batch=self.batch
+        self.sprite.batch=None
         self.smashing="none"
         self.smashing_time=0
         super().die()
