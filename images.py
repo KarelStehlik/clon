@@ -15,6 +15,24 @@ ShieldR=pyglet.resource.image("imagefolder/BShield.png").get_transform(flip_x=Tr
 sprayerR=pyglet.resource.image("imagefolder/BSprayer.png")
 sprayerG=pyglet.resource.image("imagefolder/GSprayer.png")
 
+SmashR=pyglet.resource.image("imagefolder/BSmash.png")
+SmashG=pyglet.resource.image("imagefolder/GSmash.png")
+SmashRL=pyglet.resource.image("imagefolder/BSmashL.png")
+SmashGL=pyglet.resource.image("imagefolder/GSmashL.png")
+SmashRR=pyglet.resource.image("imagefolder/BSmashR.png")
+SmashGR=pyglet.resource.image("imagefolder/GSmashR.png")
+for e in [SmashR,SmashG]:
+    e.width=80*SPRITE_SIZE_MULT
+    e.height=120*SPRITE_SIZE_MULT
+    e.anchor_x=e.width//2
+for e in [SmashRL,SmashGL,SmashRR,SmashGR]:
+    e.width=100*SPRITE_SIZE_MULT
+    e.height=120*SPRITE_SIZE_MULT
+for e in [SmashRR,SmashGR]:
+    e.anchor_x=40*SPRITE_SIZE_MULT
+for e in [SmashRL,SmashGL]:
+    e.anchor_x=60*SPRITE_SIZE_MULT
+
 sprayerG.width=60*SPRITE_SIZE_MULT
 sprayerG.height=80*SPRITE_SIZE_MULT
 sprayerR.width=60*SPRITE_SIZE_MULT

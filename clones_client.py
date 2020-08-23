@@ -423,6 +423,85 @@ class MegaMixer(clone):
         super().move(dt)
         if self.exists:
             self.shoot([],dt)
+####################################################################
+class Smash(clone):
+    cost=0
+    imageG=images.SmashG
+    imageR=images.SmashR
+    def __init__(self,mapp,l,bulletlist,batch,side):
+        super().__init__(mapp,l,batch,hp=1500,height=120,
+                         width=80,spd=150,jump=600,side=side)
+        self.dmg=60
+        self.aspd=1
+        self.lastshot=0
+        self.radius=200
+        self.enemies=l[1-side]
+        self.smashing="none"
+        self.smashing_time=0
+        if side==0:
+            self.spryte=pyglet.sprite.Sprite(self.imageG,10,100,batch=None,group=dudeg)
+            self.left=pyglet.sprite.Sprite(images.SmashGL,self.sprite.x,self.sprite.y,batch=None,group=dudeg)
+            self.right=pyglet.sprite.Sprite(images.SmashGR,self.sprite.x,self.sprite.y,batch=None,group=dudeg)
+        else:
+            self.spryte=pyglet.sprite.Sprite(self.imageR,10,100,batch=None,group=dudeg)
+            self.left=pyglet.sprite.Sprite(images.SmashRL,self.sprite.x,self.sprite.y,batch=None,group=dudeg)
+            self.right=pyglet.sprite.Sprite(images.SmashRR,self.sprite.x,self.sprite.y,batch=None,group=dudeg)
+    def shoot(self,a,dt):
+        if a[0]<=0:
+            for e in self.enemies:
+                if (e.x-self.x+20)**2 + (e.y+e.height-self.y-self.height/2)**2<=self.radius**2:
+                    e.vx-=150
+                    e.vy+=600
+                    e.take_damage(self.dmg,self)
+            self.smashing="left"
+            self.sprite.batch=None
+            if self.facing==1:
+                self.sprite=self.left
+                self.sprite.scale_x=1
+                self.sprite.batch=self.batch
+            else:
+                self.sprite=self.right
+                self.sprite.scale_x=-1
+                self.sprite.batch=self.batch
+        else:
+            for e in self.enemies:
+                if (e.x-self.x-20)**2 + (e.y+e.height-self.y-self.height/2)**2<=self.radius**2:
+                    e.vx+=150
+                    e.vy+=600
+                    e.take_damage(self.dmg,self)
+            self.smashing="right"
+            self.sprite.batch=None
+            if self.facing==1:
+                self.sprite=self.right
+                self.sprite.scale_x=1
+                self.sprite.batch=self.batch
+            else:
+                self.sprite=self.left
+                self.sprite.scale_x=-1
+                self.sprite.batch=self.batch
+        self.smashing_time=0.3
+    def can_shoot(self):
+        t=self.exist_time
+        if t-self.lastshot>self.aspd and self.exists:
+            self.lastshot=t
+            return True
+        return False
+    def move(self,dt):
+        if self.smashing_time>0:
+            self.smashing_time-=min(dt,self.smashing_time)
+            if self.smashing_time==0:
+                self.sprite.batch=None
+                self.spryte.scale_x=self.sprite.scale_x
+                self.sprite=self.spryte
+                self.sprite.batch=self.batch
+                self.smashing="none"
+        super().move(dt)
+    def die(self):
+        self.sprite.batch=None
+        self.sprite=self.spryte
+        self.sprite.batch=self.batch
+        self.smashing="none"
+        self.smashing_time=0
+        super().die()
 
-
-possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MegaMixer]
+possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MegaMixer,Smash]

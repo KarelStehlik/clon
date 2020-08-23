@@ -418,7 +418,40 @@ class MegaMixer(clone):
         super().move(dt)
         if self.exists:
             self.shoot([],dt)
+################################################################
+class Smash(clone):
+    cost=0
+    def __init__(self,mapp,l,bulletlist,side):
+        super().__init__(mapp,l,hp=1500,height=120,
+                         width=80,spd=150,jump=600,side=side)
+        self.dmg=60
+        self.aspd=1
+        self.lastshot=0
+        self.radius=200
+        self.enemies=l[1-side]
+    def shoot(self,a,dt):
+        if self.active:
+            channels.send_both({"action":"shoot","a":a,"side":self.side})
+            self.log.append(["shoot",self.exist_time,a])
+        if a[0]<=0:
+            for e in self.enemies:
+                if (e.x-self.x+20)**2 + (e.y+e.height-self.y-self.height/2)**2<=self.radius**2:
+                    e.vx-=150
+                    e.vy+=600
+                    e.take_damage(self.dmg,self)
+        else:
+            for e in self.enemies:
+                if (e.x-self.x-20)**2 + (e.y+e.height-self.y-self.height/2)**2<=self.radius**2:
+                    e.vx+=150
+                    e.vy+=600
+                    e.take_damage(self.dmg,self)
+    def can_shoot(self):
+        if not self.exists:
+            return False
+        t=self.exist_time
+        if t-self.lastshot>self.aspd:
+            self.lastshot=t
+            return True
+        return False
 
-
-
-possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MegaMixer]
+possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MegaMixer,Smash]
