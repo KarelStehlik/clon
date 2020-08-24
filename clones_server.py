@@ -82,6 +82,10 @@ class clone():
                 self.log.append(["w",self.exist_time])
             if self.on_ground():
                 self.vy=self.jump
+    def knockback(self,x,y):
+        if self.exists:
+            self.vx+=x
+            self.vy+=y
     def move(self,dt):
         if self.exists:
             self.exist_time+=dt
@@ -202,7 +206,7 @@ class BasicGuy(clone):
         return False
 ###########################################################################################################
 class Mixer(clone):
-    cost=50
+    cost=0
     def __init__(self,mapp,l,bulletlist,side):
         super().__init__(mapp,l,hp=100,height=60,
                          width=30,spd=300,jump=700,side=side)
@@ -436,14 +440,12 @@ class Smash(clone):
         if a[0]<=0:
             for e in self.enemies:
                 if (e.x-self.x+20)**2 + (e.y+e.height-self.y-self.height/2)**2<=self.radius**2:
-                    e.vx-=150
-                    e.vy+=600
+                    e.knockback(-150,600)
                     e.take_damage(self.dmg,self)
         else:
             for e in self.enemies:
                 if (e.x-self.x-20)**2 + (e.y+e.height-self.y-self.height/2)**2<=self.radius**2:
-                    e.vx+=150
-                    e.vy+=600
+                    e.knockback(150,600)
                     e.take_damage(self.dmg,self)
     def can_shoot(self):
         if not self.exists:
@@ -454,4 +456,4 @@ class Smash(clone):
             return True
         return False
 
-possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MegaMixer,Smash]
+possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,Smash,MegaMixer]

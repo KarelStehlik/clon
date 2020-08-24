@@ -101,6 +101,10 @@ class clone():
     def w(self):
         if self.on_ground() and self.exists:
             self.vy=self.jump
+    def knockback(self,x,y):
+        if self.exists:
+            self.vx+=x
+            self.vy+=y
     def move(self,dt):
         if self.exists:
             self.exist_time+=dt
@@ -220,7 +224,7 @@ class BasicGuy(clone):
         return False
 ###########################################################################################################
 class Mixer(clone):
-    cost=50
+    cost=0
     imageG=images.mixerG
     imageR=images.mixerR
     def __init__(self,mapp,l,bulletlist,batch,side):
@@ -450,35 +454,31 @@ class Smash(clone):
         if a[0]<=0:
             for e in self.enemies:
                 if (e.x-self.x+20)**2 + (e.y+e.height-self.y-self.height/2)**2<=self.radius**2:
-                    e.vx-=150
-                    e.vy+=600
+                    e.knockback(-150,600)
                     e.take_damage(self.dmg,self)
             self.smashing="left"
             self.sprite.batch=None
             if self.facing==1:
                 self.sprite=self.left
-                self.sprite.scale_x=1
                 self.sprite.batch=self.batch
             else:
                 self.sprite=self.right
-                self.sprite.scale_x=-1
                 self.sprite.batch=self.batch
+            self.sprite.scale_x=self.facing
         else:
             for e in self.enemies:
                 if (e.x-self.x-20)**2 + (e.y+e.height-self.y-self.height/2)**2<=self.radius**2:
-                    e.vx+=150
-                    e.vy+=600
+                    e.knockback(150,600)
                     e.take_damage(self.dmg,self)
             self.smashing="right"
             self.sprite.batch=None
             if self.facing==1:
                 self.sprite=self.right
-                self.sprite.scale_x=1
                 self.sprite.batch=self.batch
             else:
                 self.sprite=self.left
-                self.sprite.scale_x=-1
                 self.sprite.batch=self.batch
+            self.sprite.scale_x=self.facing
         self.smashing_time=0.3
     def can_shoot(self):
         t=self.exist_time
@@ -504,4 +504,4 @@ class Smash(clone):
         self.smashing_time=0
         super().die()
 
-possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MegaMixer,Smash]
+possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,Smash,MegaMixer]
