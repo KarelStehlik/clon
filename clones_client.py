@@ -35,6 +35,8 @@ class clone():
         l[self.side]+=[self]
         self.l=l
         self.facing=1
+        self.moving=0
+        self.move_locked=False
         self.hpbar_scale=SPRITE_SIZE_MULT*self.width/images.buttonG.width
         if self.side==0:
             self.x=10
@@ -87,26 +89,38 @@ class clone():
         return False
     def a_start(self):
         if self.exists:
-            self.vx=-self.spd
             self.sprite.scale_x=-1
             self.facing=-1
+            self.moving=-1
+            if not self.move_locked:
+                self.vx=-self.spd
     def move_stop(self):
         if self.exists:
             self.vx=0
+            self.moving=0
+            if not self.move_locked:
+                self.vx=0
     def d_start(self):
         if self.exists:
-            self.vx=self.spd
             self.sprite.scale_x=1
             self.facing=1
+            self.moving=1
+            if not self.move_locked:
+                self.vx=self.spd
     def w(self):
         if self.on_ground() and self.exists:
             self.vy=self.jump
     def knockback(self,x,y):
         if self.exists:
+            self.y+=1
             self.vx+=x
             self.vy+=y
+            self.move_locked=True
     def move(self,dt):
         if self.exists:
+            if self.move_locked and self.on_ground():
+                self.move_locked=False
+                self.vx=self.moving*self.spd
             self.exist_time+=dt
             if not self.active:
                 for e in self.log[self.log_completed::]:
@@ -433,12 +447,12 @@ class Smash(clone):
     imageG=images.SmashG
     imageR=images.SmashR
     def __init__(self,mapp,l,bulletlist,batch,side):
-        super().__init__(mapp,l,batch,hp=1500,height=120,
+        super().__init__(mapp,l,batch,hp=2000,height=120,
                          width=80,spd=150,jump=600,side=side)
-        self.dmg=60
+        self.dmg=120
         self.aspd=1
         self.lastshot=0
-        self.radius=200
+        self.radius=60
         self.enemies=l[1-side]
         self.smashing="none"
         self.smashing_time=0
@@ -453,8 +467,8 @@ class Smash(clone):
     def shoot(self,a,dt):
         if a[0]<=0:
             for e in self.enemies:
-                if (e.x-self.x+20)**2 + (e.y+e.height-self.y-self.height/2)**2<=self.radius**2:
-                    e.knockback(-150,600)
+                if (e.x-self.x+30)**2 + (e.y+e.height/2-self.y-self.height/2)**2<=self.radius**2:
+                    e.knockback(-500,1000)
                     e.take_damage(self.dmg,self)
             self.smashing="left"
             self.sprite.batch=None
@@ -467,8 +481,8 @@ class Smash(clone):
             self.sprite.scale_x=self.facing
         else:
             for e in self.enemies:
-                if (e.x-self.x-20)**2 + (e.y+e.height-self.y-self.height/2)**2<=self.radius**2:
-                    e.knockback(150,600)
+                if (e.x-self.x-30)**2 + (e.y+e.height/2-self.y-self.height/2)**2<=self.radius**2:
+                    e.knockback(500,1000)
                     e.take_damage(self.dmg,self)
             self.smashing="right"
             self.sprite.batch=None
@@ -503,5 +517,39 @@ class Smash(clone):
         self.smashing="none"
         self.smashing_time=0
         super().die()
+###########################################################################
+class MachineGun(clone):
+    cost=1000
+    imageG=images.gunmanG
+    imageR=images.gunmanR
+    def __init__(self,mapp,l,bulletlist,batch,side):
+        super().__init__(mapp,l,batch,hp=200,height=70,
+                         width=30,spd=140,jump=500,side=side)
+        self.dmg=1.4
+        self.aspd=0.0
+        self.bspd=800
+        self.rang=600
+        self.bulletlist=bulletlist
+        self.lastshot=0
+    def shoot(self,a,dt):
+        x=a[0]
+        y=a[1]
+        if x==0:
+            vx=self.bspd
+            vy=0
+        else:
+            vx=self.bspd/math.sqrt(y**2/x**2+1)
+            if x<0:
+                vx*=-1
+            vy=vx*y/x
+        a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
+                         self.rang,self.dmg,self.bulletlist,self.batch)
+    def can_shoot(self):
+        t=self.exist_time
+        if t-self.lastshot>self.aspd and self.exists:
+            self.lastshot=t
+            return True
+        return False
 
-possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,Smash,MegaMixer]
+possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,
+                MegaMixer]
