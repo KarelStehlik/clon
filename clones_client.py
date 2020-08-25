@@ -449,13 +449,13 @@ class Smash(clone):
     def __init__(self,mapp,l,bulletlist,batch,side):
         super().__init__(mapp,l,batch,hp=2000,height=120,
                          width=80,spd=150,jump=600,side=side)
-        self.dmg=120
+        self.dmg=200
         self.aspd=1
         self.lastshot=0
-        self.radius=60
         self.enemies=l[1-side]
         self.smashing="none"
         self.smashing_time=0
+        self.radius=20
         if side==0:
             self.spryte=pyglet.sprite.Sprite(self.imageG,10,100,batch=None,group=dudeg)
             self.left=pyglet.sprite.Sprite(images.SmashGL,self.sprite.x,self.sprite.y,batch=None,group=dudeg)
@@ -467,7 +467,9 @@ class Smash(clone):
     def shoot(self,a,dt):
         if a[0]<=0:
             for e in self.enemies:
-                if (e.x-self.x+30)**2 + (e.y+e.height/2-self.y-self.height/2)**2<=self.radius**2:
+                if rect_intersect(self.x-50-self.radius,self.y+self.height/2-self.radius,
+                                  self.x-50+self.radius,self.y+self.height/2+self.radius,
+                                  e.x-e.width/2,e.y,e.x+e.width/2,e.y+e.height):
                     e.knockback(-500,1000)
                     e.take_damage(self.dmg,self)
             self.smashing="left"
@@ -481,7 +483,9 @@ class Smash(clone):
             self.sprite.scale_x=self.facing
         else:
             for e in self.enemies:
-                if (e.x-self.x-30)**2 + (e.y+e.height/2-self.y-self.height/2)**2<=self.radius**2:
+                if rect_intersect(self.x+50-self.radius,self.y+self.height/2-self.radius,
+                                  self.x+50+self.radius,self.y+self.height/2+self.radius,
+                                  e.x-e.width/2,e.y,e.x+e.width/2,e.y+e.height):
                     e.knockback(500,1000)
                     e.take_damage(self.dmg,self)
             self.smashing="right"
@@ -550,6 +554,54 @@ class MachineGun(clone):
             self.lastshot=t
             return True
         return False
-
+###########################################################################
+class Tank(clone):
+    cost=5000
+    imageG=images.tankG
+    imageR=images.tankR
+    def __init__(self,mapp,l,bulletlist,batch,side):
+        super().__init__(mapp,l,batch,hp=5000,height=80,
+                         width=150,spd=100,jump=0,side=side)
+        self.dmg=500
+        self.aspd=3
+        self.bspd=1000
+        self.rang=1000
+        self.bulletlist=bulletlist
+        self.lastshot=0
+        self.eradius=100
+        self.dmg2=100
+        self.enemies=l[1-side]
+    def shoot(self,a,dt):
+        x=a[0]
+        y=a[1]
+        if x==0:
+            vx=self.bspd
+            vy=0
+        else:
+            vx=self.bspd/math.sqrt(y**2/x**2+1)
+            if x<0:
+                vx*=-1
+            vy=vx*y/x
+        a=BazookaBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
+                         self.rang,self.dmg,self.bulletlist,self.batch,self.eradius)
+    def can_shoot(self):
+        t=self.exist_time
+        if t-self.lastshot>self.aspd and self.exists:
+            self.lastshot=t
+            return True
+        return False
+    def w(self):
+        pass
+    def knockback(self,a,b):
+        super().knockback(a/5,b/4)
+    def shoot2(self,dt):
+        for e in self.enemies:
+            if e.exists and e.x-e.width/2<self.x<e.x+e.width/2 and e.y<self.y+self.height/2<e.y+e.height:
+                e.take_damage(self.dmg2*dt,self)
+    def move(self,dt):
+        super().move(dt)
+        if self.exists:
+            self.shoot2(dt)
+###########################################################################
 possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,
-                MegaMixer]
+                Tank,MegaMixer]

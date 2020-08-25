@@ -441,23 +441,27 @@ class Smash(clone):
     def __init__(self,mapp,l,bulletlist,side):
         super().__init__(mapp,l,hp=2000,height=120,
                          width=80,spd=150,jump=600,side=side)
-        self.dmg=120
+        self.dmg=200
         self.aspd=1
         self.lastshot=0
-        self.radius=60
         self.enemies=l[1-side]
+        self.radius=20
     def shoot(self,a,dt):
         if self.active:
             channels.send_both({"action":"shoot","a":a,"side":self.side})
             self.log.append(["shoot",self.exist_time,a])
         if a[0]<=0:
             for e in self.enemies:
-                if (e.x-self.x+30)**2 + (e.y+e.height/2-self.y-self.height/2)**2<=self.radius**2:
+                if rect_intersect(self.x-50-self.radius,self.y+self.height/2-self.radius,
+                                  self.x-50+self.radius,self.y+self.height/2+self.radius,
+                                  e.x-e.width/2,e.y,e.x+e.width/2,e.y+e.height):
                     e.knockback(-500,1000)
                     e.take_damage(self.dmg,self)
         else:
             for e in self.enemies:
-                if (e.x-self.x-30)**2 + (e.y+e.height/2-self.y-self.height/2)**2<=self.radius**2:
+                if rect_intersect(self.x+50-self.radius,self.y+self.height/2-self.radius,
+                                  self.x+50+self.radius,self.y+self.height/2+self.radius,
+                                  e.x-e.width/2,e.y,e.x+e.width/2,e.y+e.height):
                     e.knockback(500,1000)
                     e.take_damage(self.dmg,self)
     def can_shoot(self):
@@ -504,4 +508,57 @@ class MachineGun(clone):
             self.lastshot=t
             return True
         return False
-possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,MegaMixer]
+#################################################################################
+class Tank(clone):
+    cost=5000
+    def __init__(self,mapp,l,bulletlist,side):
+        super().__init__(mapp,l,hp=5000,height=80,
+                         width=150,spd=100,jump=0,side=side)
+        self.dmg=500
+        self.aspd=3
+        self.bspd=1000
+        self.rang=1000
+        self.bulletlist=bulletlist
+        self.lastshot=0
+        self.eradius=100
+        self.dmg2=100
+        self.enemies=l[1-side]
+    def shoot(self,a,dt):
+        if self.active:
+            channels.send_both({"action":"shoot","a":a,"side":self.side})
+            self.log.append(["shoot",self.exist_time,a])
+        x=a[0]
+        y=a[1]
+        if x==0:
+            vx=self.bspd
+            vy=0
+        else:
+            vx=self.bspd/math.sqrt(y**2/x**2+1)
+            if x<0:
+                vx*=-1
+            vy=vx*y/x
+        a=BazookaBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
+                         self.rang,self.dmg,self.bulletlist,self.eradius)
+    def can_shoot(self):
+        if not self.exists:
+            return False
+        t=self.exist_time
+        if t-self.lastshot>self.aspd:
+            self.lastshot=t
+            return True
+        return False
+    def shoot2(self,dt):
+        for e in self.enemies:
+            if e.exists and e.x-e.width/2<self.x<e.x+e.width/2 and e.y<self.y+self.height/2<e.y+e.height:
+                e.take_damage(self.dmg2*dt,self)
+    def w(self):
+        pass
+    def move(self,dt):
+        super().move(dt)
+        if self.exists:
+            self.shoot2(dt)
+    def knockback(self,a,b):
+        super().knockback(a/5,b/4)
+#############################################################################
+possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,
+                Tank,MegaMixer]

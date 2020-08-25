@@ -25,7 +25,7 @@ class platform:
         self.pic.x=self.graphicx
         self.pic.draw()
         
-map1=[platform(20000,20,-600,0),
+map1=[platform(20000,20,-10000,0),
        platform(200,30,500,100),
        platform(200,30,200,200),
       platform(20,600,100,20),
@@ -35,7 +35,7 @@ map1=[platform(20000,20,-600,0),
       platform(20,200,100,20),
       platform(20,100,100,20),
       platform(200,30,1000,100)]
-map2=[platform(20000,20,-600,0),
+map2=[platform(20000,20,-10000,0),
        platform(200,30,500,100),
        platform(200,30,200,200),
        platform(200,30,500,300),

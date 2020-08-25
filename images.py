@@ -33,6 +33,13 @@ for e in [SmashRR,SmashGR]:
 for e in [SmashRL,SmashGL]:
     e.anchor_x=60*SPRITE_SIZE_MULT
 
+tankR=pyglet.resource.image("imagefolder/BTank.png")
+tankG=pyglet.resource.image("imagefolder/GTank.png")
+for e in [tankR,tankG]:
+    e.width=150
+    e.height=80
+    e.anchor_x=75
+
 sprayerG.width=60*SPRITE_SIZE_MULT
 sprayerG.height=80*SPRITE_SIZE_MULT
 sprayerR.width=60*SPRITE_SIZE_MULT
