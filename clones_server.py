@@ -441,7 +441,7 @@ class Smash(clone):
     def __init__(self,mapp,l,bulletlist,side):
         super().__init__(mapp,l,hp=2000,height=120,
                          width=80,spd=150,jump=600,side=side)
-        self.dmg=200
+        self.dmg=300
         self.aspd=1
         self.lastshot=0
         self.enemies=l[1-side]
@@ -478,10 +478,10 @@ class MachineGun(clone):
     def __init__(self,mapp,l,bulletlist,side):
         super().__init__(mapp,l,hp=200,height=70,
                          width=30,spd=140,jump=500,side=side)
-        self.dmg=1.4
+        self.dmg=1.0
         self.aspd=0.0
         self.bspd=800
-        self.rang=600
+        self.rang=550
         self.bulletlist=bulletlist
         self.lastshot=0
     def shoot(self,a,dt):
@@ -520,7 +520,7 @@ class Tank(clone):
         self.rang=1000
         self.bulletlist=bulletlist
         self.lastshot=0
-        self.eradius=100
+        self.eradius=80
         self.dmg2=100
         self.enemies=l[1-side]
     def shoot(self,a,dt):
