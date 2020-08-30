@@ -43,6 +43,7 @@ class clone():
         else:
             self.x=1270
         self.y=100
+        self.vpoint=self.x-1280/2
         self.sprite=pyglet.sprite.Sprite(self.skin,10,100,batch=self.batch,group=dudeg)
         self.hpbar=pyglet.sprite.Sprite(images.buttonG,self.x,self.y+self.height,batch=self.batch,group=dudeg)
         self.hpbar.scale=self.hpbar_scale
@@ -80,6 +81,7 @@ class clone():
         self.sprite.update(x=(x-camx)*SPRITE_SIZE_MULT,y=y*SPRITE_SIZE_MULT)
         self.hpbar.update(x=(x-self.width//2-camx)*SPRITE_SIZE_MULT,y=(y+self.height)*SPRITE_SIZE_MULT)
         self.x,self.y=x,y
+        self.vpoint=self.x-1280/2
         for e in self.additional_images:
             e[0].update(x=(self.x+e[1]-camx)*SPRITE_SIZE_MULT,y=(self.y+e[2])*SPRITE_SIZE_MULT)
     def on_ground(self):
@@ -603,5 +605,143 @@ class Tank(clone):
         if self.exists:
             self.shoot2(dt)
 ###########################################################################
+class Squad():
+    cost=0
+    imageG=images.tankG
+    imageR=images.tankR
+    def __init__(self,mapp,l,bulletlist,batch,side):
+        self.clones=[]
+        self.clones.append(BasicGuy(mapp,l,bulletlist,batch,side))
+        self.clones.append(Tank(mapp,l,bulletlist,batch,side))
+        self.active=True
+        self.exists=True
+        self.hp=[e.hp for e in self.clones]
+        self.x=[e.x for e in self.clones]
+        self.y=[e.y for e in self.clones]
+        self.vpoint=0
+    def update_health(self,hp):
+        for i in range(len(self.clones)):
+            self.clones[i].update_health(hp[i])
+    def update_pos(self,x,y):
+        for i in range(len(self.clones)):
+            self.clones[i].update_pos(x[i],y[i])
+    def a_start(self):
+        for e in self.clones:
+            e.a_start()
+    def move_stop(self):
+        for e in self.clones:
+            e.move_stop()
+    def d_start(self):
+        for e in self.clones:
+            e.d_start()
+    def w(self):
+        for e in self.clones:
+            e.w()
+    def move(self,dt):
+        self.vpoint=self.clones[0].vpoint
+        for e in self.clones:
+            e.move(dt)
+    def die(self):
+        if self.exists:
+            if self.active:
+                self.active=False
+            self.exists=False
+        for e in self.clones:
+            e.die()
+    def can_shoot(self):
+        c=self.clones
+        return c[0].can_shoot() or c[1].can_shoot()
+    def shoot(self,a,dt):
+        for e in self.clones:
+            if e.can_shoot():
+                e.shoot(a,dt)
+######################################################################################
+class Engi(clone):
+    cost=0
+    imageG=images.gunmanG
+    imageR=images.gunmanR
+    def __init__(self,mapp,l,bulletlist,batch,side):
+        super().__init__(mapp,l,batch,hp=50,height=70,
+                         width=30,spd=200,jump=600,side=side)
+        self.bulletlist=bulletlist
+        self.lastshot=0
+        self.turrets=[]
+        self.aspd=1
+    def shoot(self,a,dt):
+        Turret(self.mapp,self.l,self.batch,self.bulletlist,self.side,self.turrets,self.x,self.y)
+    def can_shoot(self):
+        if not self.exists:
+            return False
+        t=self.exist_time
+        if t-self.lastshot>self.aspd:
+            self.lastshot=t
+            return True
+        return False
+class Turret(clone):
+    imageG=images.gunmanG
+    imageR=images.gunmanR
+    def __init__(self,mapp,l,batch,bulletlist,side,l2,x,y):
+        super().__init__(mapp,l,batch,hp=50,height=70,
+                         width=30,spd=200,jump=600,side=side)
+        self.l2=l2
+        l2.append(self)
+        self.bulletlist=bulletlist
+        self.lastshot=0
+        self.aspd=0.1
+        self.bspd=500
+        self.rang=500
+        self.dmg=20
+        self.update_pos(x,y)
+        self.exists=True
+        self.active=False
+        self.additional_images=[]
+    def die(self):
+        self.l[self.side].remove(self)
+        self.l2.remove(self)
+        self.exists=False
+        del self
+    def move(self,dt):
+        if self.exists:
+            if self.move_locked and self.on_ground():
+                self.move_locked=False
+                self.vx=self.moving*self.spd
+            self.exist_time+=dt
+            self.x=self.x+self.vx*dt
+            ycap=-500
+            for e in self.mapp.platforms:
+                if self.y>e.y and self.vy<0 and rect_intersect(self.x,
+                                                                   self.y+self.vy*dt,
+                                                                   self.x,
+                                                                   self.y,
+                                                                   e.x,e.y+e.h,e.x+e.w,e.y+e.h):
+                    ycap=max(e.y+e.h,ycap)
+            self.y=max(ycap,self.y+self.vy*dt)
+            if not ycap==-500:
+                self.vy=0
+            if self.y<=-500:
+                self.die()
+            self.update_pos(self.x,self.y)
+    def can_shoot(self):
+        if not self.exists:
+            return False
+        t=self.exist_time
+        if t-self.lastshot>self.aspd:
+            self.lastshot=t
+            return True
+        return False
+    def shoot(self,a):
+        x=a[0]
+        y=a[1]
+        if x==0:
+            vx=self.bspd
+            vy=0
+        else:
+            vx=self.bspd/math.sqrt(y**2/x**2+1)
+            if x<0:
+                vx*=-1
+            vy=vx*y/x
+        a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
+                         self.rang,self.dmg,self.bulletlist,self.batch)
+############################################################################
 possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,
-                Tank,MegaMixer]
+                Tank,MegaMixer,Engi]#,Squad]

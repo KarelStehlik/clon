@@ -24,6 +24,6 @@ class platform:
     def draw(self):
         self.pic.x=self.graphicx
         self.pic.draw()
-a=open("test.txt","r")
+a=open("mapdata.txt","r")
 x=a.read().split("/")
 maps=[[platform([int(float(t)) for t in i.split(",")]) for i in e.split("\n")] for e in x]

@@ -560,5 +560,149 @@ class Tank(clone):
     def knockback(self,a,b):
         super().knockback(a/5,b/4)
 #############################################################################
+class Squad():
+    cost=0
+    def __init__(self,mapp,l,bulletlist,side):
+        self.clones=[]
+        self.clones.append(BasicGuy(mapp,l,bulletlist,side))
+        self.clones.append(Tank(mapp,l,bulletlist,side))
+        self.active=True
+        self.exists=True
+        self.hp=[e.hp for e in self.clones]
+        self.x=[e.x for e in self.clones]
+        self.y=[e.y for e in self.clones]
+    def a_start(self):
+        for e in self.clones:
+            e.a_start()
+    def move_stop(self):
+        for e in self.clones:
+            e.move_stop()
+    def d_start(self):
+        for e in self.clones:
+            e.d_start()
+    def w(self):
+        for e in self.clones:
+            e.w()
+    def move(self,dt):
+        for e in self.clones:
+            e.move(dt)
+        self.hp=[e.hp for e in self.clones]
+        self.x=[e.x for e in self.clones]
+        self.y=[e.y for e in self.clones]
+    def die(self):
+        if self.exists:
+            if self.active:
+                self.active=False
+            self.exists=False
+        for e in self.clones:
+            e.die()
+    def can_shoot(self):
+        c=self.clones
+        return c[0].can_shoot() or c[1].can_shoot()
+    def shoot(self,a,dt):
+        for e in self.clones:
+            if e.can_shoot():
+                e.shoot(a,dt)
+################################################################################
+class Engi(clone):
+    cost=0
+    def __init__(self,mapp,l,bulletlist,side):
+        super().__init__(mapp,l,hp=50,height=70,
+                         width=30,spd=200,jump=600,side=side)
+        self.bulletlist=bulletlist
+        self.lastshot=0
+        self.turrets=[]
+        self.aspd=1
+    def shoot(self,a,dt):
+        Turret(self.mapp,self.l,self.bulletlist,self.side,self.turrets,self.x,self.y)
+        if self.active:
+            channels.send_both({"action":"shoot","a":a,"side":self.side})
+            self.log.append(["shoot",self.exist_time,a])
+    def can_shoot(self):
+        if not self.exists:
+            return False
+        t=self.exist_time
+        if t-self.lastshot>self.aspd:
+            self.lastshot=t
+            return True
+        return False
+class Turret(clone):
+    def __init__(self,mapp,l,bulletlist,side,l2,x,y):
+        super().__init__(mapp,l,hp=50,height=70,
+                         width=30,spd=200,jump=600,side=side)
+        self.l2=l2
+        l2.append(self)
+        self.bulletlist=bulletlist
+        self.lastshot=0
+        self.aspd=0.1
+        self.bspd=500
+        self.rang=500
+        self.dmg=20
+        self.x,self.y=x,y
+        self.exists=True
+        self.enemies=self.l[1-self.side]
+    def die(self):
+        self.l[self.side].remove(self)
+        self.l2.remove(self)
+        self.exists=False
+        del self
+    def take_damage(self,amount,source):
+        if self.exists:
+            self.hp-=amount
+            if self.hp<=0:
+                self.die()
+    def move(self,dt):
+        if self.exists:
+            if self.can_shoot():
+                self.aim_shoot()
+            if self.move_locked and self.on_ground():
+                self.move_locked=False
+                self.vx=self.moving*self.spd
+            self.exist_time+=dt
+            self.x=self.x+self.vx*dt
+            ycap=-500
+            for e in self.mapp.platforms:
+                if self.y>e.y and self.vy<0 and rect_intersect(self.x,
+                                                                   self.y+self.vy*dt,
+                                                                   self.x,
+                                                                   self.y,
+                                                                   e.x,e.y+e.h,e.x+e.w,e.y+e.h):
+                    ycap=max(e.y+e.h,ycap)
+            self.y=max(ycap,self.y+self.vy*dt)
+            if not ycap==-500:
+                self.vy=0
+            if self.y<=-500:
+                self.die()
+    def can_shoot(self):
+        if not self.exists:
+            return False
+        t=self.exist_time
+        if t-self.lastshot>self.aspd:
+            self.lastshot=t
+            return True
+        return False
+    def aim_shoot(self):
+        d=self.rang**2
+        for e in self.enemies:
+            de=(self.x-e.x)**2+(self.y+self.height/2-e.y-e.height/2)**2
+            if de<=d:
+                d=de
+                target=e
+        if d<self.rang**2:
+            self.shoot([target.x-self.x,target.y+target.height/2-self.y-self.height/2])                
+    def shoot(self,a):
+        x=a[0]
+        y=a[1]
+        if x==0:
+            vx=self.bspd
+            vy=0
+        else:
+            vx=self.bspd/math.sqrt(y**2/x**2+1)
+            if x<0:
+                vx*=-1
+            vy=vx*y/x
+        a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
+                         self.rang,self.dmg,self.bulletlist)
+############################################################################
 possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,
-                Tank,MegaMixer]
+                Tank,MegaMixer,Engi]#,Squad]

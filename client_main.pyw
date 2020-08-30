@@ -207,13 +207,13 @@ class mode_testing(mode):
         global side
         if not self.current_clones[side]==None:
             self.total_time+=dt
-            self.camx=self.current_clones[side].x-1280/2
+            self.camx=self.current_clones[side].vpoint
             cx=self.camx
             if self.win.mouseheld:
                 a=self.current_clones[side]
                 if a.can_shoot():
                     connection.Send({"action": "shoot",
-                                     "a": [self.mousex/SPRITE_SIZE_MULT+cx-a.x,
+                                     "a": [self.mousex/SPRITE_SIZE_MULT+cx-a.vpoint-1280/2,
                                      self.mousey/SPRITE_SIZE_MULT-a.y-a.height/2]})
             clones.camx=cx
             for e in self.clones[0]:
@@ -294,7 +294,7 @@ class windoo(pyglet.window.Window):
             self.sec-=1
             self.fpscount.text=str(self.frames)
             self.frames=0
-place = windoo(resizable=True,caption='test',fullscreen=True)
+place = windoo(caption='test',fullscreen=True)
 place.start()
 pyglet.clock.schedule_interval(place.tick,1.0/60)
 
@@ -303,6 +303,10 @@ while not nwl.start:
     pyglet.clock.tick()
     nwl.Pump()
 while True:
-    connection.Pump()
-    pyglet.clock.tick()
-    nwl.Pump()
+    try:
+        connection.Pump()
+        pyglet.clock.tick()
+        nwl.Pump()
+    except Exception as a:
+        place.close()
+        raise(a)

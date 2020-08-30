@@ -10,7 +10,6 @@ import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
 from pyglet.window import key
 from pyglet import clock
-import atexit
 import requests
 import threading
 import images
