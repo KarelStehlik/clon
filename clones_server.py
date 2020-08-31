@@ -7,12 +7,16 @@ import random
 from constants import *
 import serverchannels as channels
 dudeg=pyglet.graphics.OrderedGroup(2)
+ID=0
 def rect_intersect(ax1,ay1,ax2,ay2,bx1,by1,bx2,by2):
     return ax1<=bx2 and bx1<=ax2 and ay1<=by2 and by1<=ay2
 def take_second(l):
     return l[1]
 class clone():
     def __init__(self,mapp,l,**kwargs):
+        global ID
+        self.ID=ID
+        ID+=1
         self.side=kwargs["side"]
         self.maxhp=kwargs["hp"]
         self.hp=self.maxhp
@@ -146,6 +150,7 @@ class clone():
                 self.active=False
                 self.log.sort(key=take_second)
             self.vx=0
+            self.moving=0
             self.vy=0
             self.exists=False
 class Projectile():

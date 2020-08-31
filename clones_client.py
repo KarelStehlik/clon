@@ -98,7 +98,6 @@ class clone():
                 self.vx=-self.spd
     def move_stop(self):
         if self.exists:
-            self.vx=0
             self.moving=0
             if not self.move_locked:
                 self.vx=0
@@ -166,6 +165,7 @@ class clone():
                 self.additional_images=[]
             self.vx=0
             self.vy=0
+            self.moving=0
             self.sprite.batch=None
             self.hpbar.batch=None
             self.exists=False
