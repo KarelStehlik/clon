@@ -483,7 +483,7 @@ class MachineGun(clone):
     def __init__(self,mapp,l,bulletlist,side):
         super().__init__(mapp,l,hp=200,height=70,
                          width=30,spd=140,jump=500,side=side)
-        self.dmg=1.0
+        self.dmg=1.4
         self.aspd=0.0
         self.bspd=800
         self.rang=550
@@ -563,7 +563,7 @@ class Tank(clone):
         if self.exists:
             self.shoot2(dt)
     def knockback(self,a,b):
-        super().knockback(a/5,b/4)
+        super().knockback(a/4,b/3)
 #############################################################################
 class Squad():
     cost=0
@@ -627,7 +627,7 @@ class Engi(clone):
         if not self.exists:
             return False
         t=self.exist_time
-        if t-self.lastshot>self.aspd:
+        if t-self.lastshot>self.aspd and len(self.turrets)<=5:
             self.lastshot=t
             return True
         return False
@@ -689,10 +689,11 @@ class Turret(clone):
     def aim_shoot(self):
         d=self.rang**2
         for e in self.enemies:
-            de=(self.x-e.x)**2+(self.y+self.height/2-e.y-e.height/2)**2
-            if de<=d:
-                d=de
-                target=e
+            if e.exists:
+                de=(self.x-e.x)**2+(self.y+self.height/2-e.y-e.height/2)**2
+                if de<=d:
+                    d=de
+                    target=e
         if d<self.rang**2:
             self.shoot([target.x-self.x,target.y+target.height/2-self.y-self.height/2])                
     def shoot(self,a):

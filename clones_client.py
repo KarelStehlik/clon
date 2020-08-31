@@ -531,7 +531,7 @@ class MachineGun(clone):
     def __init__(self,mapp,l,bulletlist,batch,side):
         super().__init__(mapp,l,batch,hp=200,height=70,
                          width=30,spd=140,jump=500,side=side)
-        self.dmg=1.0
+        self.dmg=1.4
         self.aspd=0.0
         self.bspd=800
         self.rang=550
@@ -595,7 +595,7 @@ class Tank(clone):
     def w(self):
         pass
     def knockback(self,a,b):
-        super().knockback(a/5,b/4)
+        super().knockback(a/4,b/3)
     def shoot2(self,dt):
         for e in self.enemies:
             if e.exists and e.x-e.width/2<self.x<e.x+e.width/2 and e.y<self.y+self.height/2<e.y+e.height:
@@ -673,7 +673,7 @@ class Engi(clone):
         if not self.exists:
             return False
         t=self.exist_time
-        if t-self.lastshot>self.aspd:
+        if t-self.lastshot>self.aspd and len(self.turrets)<=5:
             self.lastshot=t
             return True
         return False
@@ -695,6 +695,7 @@ class Turret(clone):
         self.exists=True
         self.active=False
         self.additional_images=[]
+        self.enemies=self.l[1-self.side]
     def die(self):
         self.l[self.side].remove(self)
         self.l2.remove(self)
@@ -702,6 +703,8 @@ class Turret(clone):
         del self
     def move(self,dt):
         if self.exists:
+            if self.can_shoot():
+                self.aim_shoot()
             if self.move_locked and self.on_ground():
                 self.move_locked=False
                 self.vx=self.moving*self.spd
@@ -729,6 +732,16 @@ class Turret(clone):
             self.lastshot=t
             return True
         return False
+    def aim_shoot(self):
+        d=self.rang**2
+        for e in self.enemies:
+            if e.exists:
+                de=(self.x-e.x)**2+(self.y+self.height/2-e.y-e.height/2)**2
+                if de<=d:
+                    d=de
+                    target=e
+        if d<self.rang**2:
+            self.shoot([target.x-self.x,target.y+target.height/2-self.y-self.height/2])
     def shoot(self,a):
         x=a[0]
         y=a[1]
