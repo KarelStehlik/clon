@@ -710,5 +710,42 @@ class Turret(clone):
         a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
                          self.rang,self.dmg,self.bulletlist)
 ############################################################################
+class MegaSmash(clone):
+    cost=0
+    def __init__(self,mapp,l,bulletlist,side):
+        super().__init__(mapp,l,hp=10000,height=300,
+                         width=200,spd=150,jump=600,side=side)
+        self.dmg=1500
+        self.aspd=1
+        self.lastshot=0
+        self.enemies=l[1-side]
+        self.radius=50
+    def shoot(self,a,dt):
+        if self.active:
+            channels.send_both({"action":"shoot","a":a,"side":self.side})
+            self.log.append(["shoot",self.exist_time,a])
+        if a[0]<=0:
+            for e in self.enemies:
+                if rect_intersect(self.x-80-self.radius,self.y+self.height/4-self.radius,
+                                  self.x-80+self.radius,self.y+self.height/4+self.radius,
+                                  e.x-e.width/2,e.y,e.x+e.width/2,e.y+e.height):
+                    e.knockback(-2500,1000)
+                    e.take_damage(self.dmg,self)
+        else:
+            for e in self.enemies:
+                if rect_intersect(self.x+80-self.radius,self.y+self.height/4-self.radius,
+                                  self.x+80+self.radius,self.y+self.height/4+self.radius,
+                                  e.x-e.width/2,e.y,e.x+e.width/2,e.y+e.height):
+                    e.knockback(2500,1000)
+                    e.take_damage(self.dmg,self)
+    def can_shoot(self):
+        if not self.exists:
+            return False
+        t=self.exist_time
+        if t-self.lastshot>self.aspd:
+            self.lastshot=t
+            return True
+        return False
+#################################################################################3
 possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,
-                Tank,MegaMixer,Engi]#,Squad]
+                MegaSmash,Tank,MegaMixer,Engi]#,Squad]

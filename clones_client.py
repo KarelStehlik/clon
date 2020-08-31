@@ -756,5 +756,85 @@ class Turret(clone):
         a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
                          self.rang,self.dmg,self.bulletlist,self.batch)
 ############################################################################
+class MegaSmash(clone):
+    cost=0
+    imageG=images.SmashG
+    imageR=images.SmashR
+    def __init__(self,mapp,l,bulletlist,batch,side):
+        super().__init__(mapp,l,batch,hp=10000,height=300,
+                         width=200,spd=150,jump=600,side=side)
+        self.dmg=1500
+        self.aspd=1
+        self.lastshot=0
+        self.enemies=l[1-side]
+        self.smashing="none"
+        self.smashing_time=0
+        self.radius=50
+        if side==0:
+            self.spryte=pyglet.sprite.Sprite(self.imageG,10,100,batch=None,group=dudeg)
+            self.left=pyglet.sprite.Sprite(images.SmashGL,self.sprite.x,self.sprite.y,batch=None,group=dudeg)
+            self.right=pyglet.sprite.Sprite(images.SmashGR,self.sprite.x,self.sprite.y,batch=None,group=dudeg)
+        else:
+            self.spryte=pyglet.sprite.Sprite(self.imageR,10,100,batch=None,group=dudeg)
+            self.left=pyglet.sprite.Sprite(images.SmashRL,self.sprite.x,self.sprite.y,batch=None,group=dudeg)
+            self.right=pyglet.sprite.Sprite(images.SmashRR,self.sprite.x,self.sprite.y,batch=None,group=dudeg)
+    def shoot(self,a,dt):
+        if a[0]<=0:
+            for e in self.enemies:
+                if rect_intersect(self.x-80-self.radius,self.y+self.height/4-self.radius,
+                                  self.x-80+self.radius,self.y+self.height/4+self.radius,
+                                  e.x-e.width/2,e.y,e.x+e.width/2,e.y+e.height):
+                    e.knockback(-2500,1000)
+                    e.take_damage(self.dmg,self)
+            self.smashing="left"
+            self.sprite.batch=None
+            if self.facing==1:
+                self.sprite=self.left
+                self.sprite.batch=self.batch
+            else:
+                self.sprite=self.right
+                self.sprite.batch=self.batch
+            self.sprite.scale_x=self.facing
+        else:
+            for e in self.enemies:
+                if rect_intersect(self.x+80-self.radius,self.y+self.height/4-self.radius,
+                                  self.x+80+self.radius,self.y+self.height/4+self.radius,
+                                  e.x-e.width/2,e.y,e.x+e.width/2,e.y+e.height):
+                    e.knockback(2500,1000)
+                    e.take_damage(self.dmg,self)
+            self.smashing="right"
+            self.sprite.batch=None
+            if self.facing==1:
+                self.sprite=self.right
+                self.sprite.batch=self.batch
+            else:
+                self.sprite=self.left
+                self.sprite.batch=self.batch
+            self.sprite.scale_x=self.facing
+        self.smashing_time=0.3
+    def can_shoot(self):
+        t=self.exist_time
+        if t-self.lastshot>self.aspd and self.exists:
+            self.lastshot=t
+            return True
+        return False
+    def move(self,dt):
+        if self.smashing_time>0:
+            self.smashing_time-=min(dt,self.smashing_time)
+            if self.smashing_time==0:
+                self.sprite.batch=None
+                self.spryte.scale_x=self.sprite.scale_x
+                self.sprite=self.spryte
+                self.sprite.batch=self.batch
+                self.smashing="none"
+        super().move(dt)
+    def die(self):
+        self.sprite.batch=None
+        self.sprite=self.spryte
+        self.sprite.batch=None
+        self.smashing="none"
+        self.smashing_time=0
+        super().die()
+#######################################################################
 possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,
-                Tank,MegaMixer,Engi]#,Squad]
+                MegaSmash,Tank,MegaMixer,Engi]#,Squad]
