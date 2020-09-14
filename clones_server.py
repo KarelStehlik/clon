@@ -179,6 +179,19 @@ class Projectile():
     def die(self,dt):
         self.l.remove(self)
         del self
+def AOE_circle(source,x,y,radius,targets,damage,knockback_x=0,knockback_y=0):
+    for e in targets:
+        if e.exists and (x-e.x)**2+(y-e.y-e.height/2)**2<=radius**2:
+            e.take_damage(damage,source)
+            if (not knockback_x==0) or (not knockback_y==0):
+                e.knockback(knockback_x,knockback_y)
+def AOE_square(source,x,y,radius,targets,damage,knockback_x=0,knockback_y=0):
+    for e in targets:
+        if rect_intersect(x-radius,y-radius,x+radius,y+radius,e.x-e.width/2,
+                          e.y,e.x+e.width/2,e.y+e.height):
+            e.take_damage(damage,source)
+            if (not knockback_x==0) or (not knockback_y==0):
+                e.knockback(knockback_x,knockback_y)
 ###################################################################################################
 class BasicGuyBullet(Projectile):
     def __init__(self,x,y,vx,vy,enemies,rang,damage,l):
@@ -232,9 +245,7 @@ class Mixer(clone):
         self.lastshot=0
         self.enemies=l[1-self.side]
     def shoot(self,a,dt):
-        for e in self.enemies:
-            if e.exists and e.x-e.width/2<self.x<e.x+e.width/2 and e.y<self.y+self.height/2<e.y+e.height:
-                e.take_damage(self.dmg*dt,self)
+        AOE_square(self,self.x,self.y+self.height*2/3,self.width/2,self.enemies,self.dmg*dt)
     def can_shoot(self):
         return False
     def move(self,dt):
@@ -283,9 +294,7 @@ class BazookaBullet(Projectile):
         super().__init__(x,y,vx,vy,enemies,rang,damage,l)
         self.radius=radius
     def on_collision(self,e):
-        for i in self.enemies:
-            if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:
-                i.take_damage(self.damage,self)
+        AOE_circle(self,self.x,self.y,self.radius,self.enemies,self.damage)
         pyglet.clock.unschedule(self.die)
         self.die(0)
 ##################################################################################################################
@@ -320,9 +329,7 @@ class Tele(clone):
             self.exist_time+=dt
             self.phase=min(self.phase+150*dt,255)
             if self.phase==255:
-                for i in self.enemies:
-                    if i.exists and (i.x-self.x)**2+(i.y+i.height//2-self.y)**2<=self.radius**2:
-                        i.take_damage(self.dmg,self)
+                AOE_circle(self,self.x,self.y,self.radius,self.enemies,self.dmg)
         else:
             super().move(dt)
     def die(self):
@@ -430,10 +437,8 @@ class MegaMixer(clone):
                 else:
                     e.x-=self.succ*dt
                 if e.y>self.y+self.height:
-                    e.y-=self.succ*dt
-                if rect_intersect(self.x-self.width/2,self.y,self.x+self.width/2,self.y+self.height,
-                                  e.x-e.width/2,e.y,e.x+e.width/2,e.y+e.height):
-                    e.take_damage(self.dmg*dt,self)
+                    e.y-=1
+        AOE_square(self,self.x,self.y+self.height*2/3,self.width/2,self.enemies,self.dmg*dt)
     def can_shoot(self):
         return False
     def move(self,dt):
@@ -456,19 +461,11 @@ class Smash(clone):
             channels.send_both({"action":"shoot","a":a,"side":self.side})
             self.log.append(["shoot",self.exist_time,a])
         if a[0]<=0:
-            for e in self.enemies:
-                if rect_intersect(self.x-50-self.radius,self.y+self.height/2-self.radius,
-                                  self.x-50+self.radius,self.y+self.height/2+self.radius,
-                                  e.x-e.width/2,e.y,e.x+e.width/2,e.y+e.height):
-                    e.knockback(-500,1000)
-                    e.take_damage(self.dmg,self)
+            AOE_square(self,self.x-50,self.y+self.height/2,self.radius,self.enemies,self.dmg,
+                       knockback_x=-500,knockback_y=1000)
         else:
-            for e in self.enemies:
-                if rect_intersect(self.x+50-self.radius,self.y+self.height/2-self.radius,
-                                  self.x+50+self.radius,self.y+self.height/2+self.radius,
-                                  e.x-e.width/2,e.y,e.x+e.width/2,e.y+e.height):
-                    e.knockback(500,1000)
-                    e.take_damage(self.dmg,self)
+            AOE_square(self,self.x+50,self.y+self.height/2,self.radius,self.enemies,self.dmg,
+                       knockback_x=500,knockback_y=1000)
     def can_shoot(self):
         if not self.exists:
             return False
@@ -714,7 +711,7 @@ class MegaSmash(clone):
     cost=0
     def __init__(self,mapp,l,bulletlist,side):
         super().__init__(mapp,l,hp=10000,height=300,
-                         width=200,spd=150,jump=600,side=side)
+                         width=200,spd=150,jump=1100,side=side)
         self.dmg=1500
         self.aspd=1
         self.lastshot=0
@@ -725,19 +722,11 @@ class MegaSmash(clone):
             channels.send_both({"action":"shoot","a":a,"side":self.side})
             self.log.append(["shoot",self.exist_time,a])
         if a[0]<=0:
-            for e in self.enemies:
-                if rect_intersect(self.x-80-self.radius,self.y+self.height/4-self.radius,
-                                  self.x-80+self.radius,self.y+self.height/4+self.radius,
-                                  e.x-e.width/2,e.y,e.x+e.width/2,e.y+e.height):
-                    e.knockback(-2500,1000)
-                    e.take_damage(self.dmg,self)
+            AOE_square(self,self.x-80,self.y+self.height/2,self.radius,self.enemies,self.dmg,
+                       knockback_x=-2500,knockback_y=1000)
         else:
-            for e in self.enemies:
-                if rect_intersect(self.x+80-self.radius,self.y+self.height/4-self.radius,
-                                  self.x+80+self.radius,self.y+self.height/4+self.radius,
-                                  e.x-e.width/2,e.y,e.x+e.width/2,e.y+e.height):
-                    e.knockback(2500,1000)
-                    e.take_damage(self.dmg,self)
+            AOE_square(self.x+80,self.y+self.height/2,self.radius,self.enemies,self.dmg,
+                       knockback_x=2500,knockback_y=1000)
     def can_shoot(self):
         if not self.exists:
             return False

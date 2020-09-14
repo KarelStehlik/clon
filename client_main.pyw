@@ -175,10 +175,11 @@ class mode_testing(mode):
         self.camx=0
         self.batch=batch
         bg=pyglet.graphics.OrderedGroup(0)
-        self.background=batch.add(4,pyglet.gl.GL_QUADS,bg,
-                                           ("v2i",[0,0,SCREEN_WIDTH,0,SCREEN_WIDTH,
-                                                   SCREEN_HEIGHT,0,SCREEN_HEIGHT]),
-                                           ("c3B",[100,100,255, 255,0,0, 255,50,50, 0,200,255]))
+        self.background=pyglet.sprite.Sprite(images.Background,x=0,y=0,group=bg,batch=batch)
+        self.background.scale_x=win.width*2/self.background.width
+        self.background.scale_y=win.height/self.background.height
+        self.half_bg_width=self.background.width//2
+        self.bg_shift=0
         if "mapp" in kw:
             self.mapp=maps.maps[kw["mapp"]]
         else:
@@ -215,7 +216,12 @@ class mode_testing(mode):
                     connection.Send({"action": "shoot",
                                      "a": [self.mousex/SPRITE_SIZE_MULT+cx-a.vpoint-1280/2,
                                      self.mousey/SPRITE_SIZE_MULT-a.y-a.height/2]})
+            if self.background.x>=0:
+                self.bg_shift-=1
+            elif self.background.x<=-self.half_bg_width:
+                self.bg_shift+=1
             clones.camx=cx
+            self.background.x=-cx+self.bg_shift*self.half_bg_width
             for e in self.clones[0]:
                 e.move(dt)
                 e.vy-=self.gravity*dt

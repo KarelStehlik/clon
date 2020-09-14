@@ -10,7 +10,7 @@ import socket
 class player_channel(Channel):
     def start(self,side):
         self.side=side
-        self.money=10000
+        self.money=100000
     def get_money(self,amount):
         self.money+=amount
         self.Send({"action":"update_money","money":self.money})

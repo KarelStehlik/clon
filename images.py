@@ -21,6 +21,7 @@ SmashRL=pyglet.resource.image("imagefolder/BSmashL.png")
 SmashGL=pyglet.resource.image("imagefolder/GSmashL.png")
 SmashRR=pyglet.resource.image("imagefolder/BSmashR.png")
 SmashGR=pyglet.resource.image("imagefolder/GSmashR.png")
+Background=pyglet.resource.image("imagefolder/Background.png")
 for e in [SmashR,SmashG]:
     e.width=80*SPRITE_SIZE_MULT
     e.height=120*SPRITE_SIZE_MULT
