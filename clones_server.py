@@ -15,17 +15,19 @@ class Game():
         self.mapp=mapp
         self.gravity=gravity
         self.bullets=[]
+        self.deadclones=[]
     def start_round(self):
         for e in self.clones[0]:
             e.start()
         for e in self.clones[1]:
             e.start()
     def summon(self,n,side):
-        self.current_clones[side]=possible_units[n](self.mapp,
-                                                    self.clones,
-                                                    self.bullets,
+        self.current_clones[side]=possible_units[n](self,
                                                     side)
     def tick(self,dt):
+        for i in range(len(self.deadclones)):
+            deed=self.deadclones.pop(0)
+            deed.die()
         for e in self.clones[0]:
             e.move(dt)
             e.vy-=self.gravity*dt
@@ -47,14 +49,8 @@ class Game():
         channels.send_both({"action":"endround","log0":self.current_clones[0].log,
                    "log1":self.current_clones[1].log})
     def summon_clones(self,c0,c1):
-        self.current_clones[0]=(possible_units)[c0](self.mapp,
-                                                        self.clones,
-                                                        self.bullets,
-                                                        0)
-        self.current_clones[1]=(possible_units)[c1](self.mapp,
-                                                        self.clones,
-                                                        self.bullets,
-                                                        1)
+        self.summon(c0,0)
+        self.summon(c1,1)
         channels.send_both({"action":"summon","c":c0,"s":0})
         channels.send_both({"action":"summon","c":c1,"s":1})
         self.start_round()
@@ -69,7 +65,7 @@ def rect_intersect(ax1,ay1,ax2,ay2,bx1,by1,bx2,by2):
 def take_second(l):
     return l[1]
 class clone():
-    def __init__(self,mapp,l,**kwargs):
+    def __init__(self,game,**kwargs):
         global ID
         self.ID=ID
         ID+=1
@@ -80,15 +76,15 @@ class clone():
         self.width=kwargs["width"]
         self.spd=kwargs["spd"]
         self.jump=kwargs["jump"]
-        self.mapp=mapp
+        self.mapp=game.mapp
         self.active=True
         self.exists=False
         self.vx=self.vy=0
         self.log=[]
         self.log_completed=0
         self.exist_time=0
-        l[self.side]+=[self]
-        self.l=l
+        game.clones[self.side]+=[self]
+        self.l=game.clones
         self.facing=1
         if self.side==0:
             self.x=10
@@ -98,8 +94,12 @@ class clone():
         self.moving=0
         self.move_locked=False
         self.shoot_queue=[]
+        self.game=game
     def add_shoot(self,a):
         self.shoot_queue.append(a)
+    def schedule_die(self):
+        if self.exists:
+            self.game.deadclones.append(self)
     def start(self):
         if self.side==0:
             self.x=10
@@ -114,7 +114,7 @@ class clone():
         if self.exists:
             self.hp-=amount
             if self.hp<=0:
-                self.die()
+                self.schedule_die()
                 channels.cn[1-self.side].get_money(self.cost//2+25)
     def on_ground(self):
         for e in self.mapp.platforms:
@@ -180,7 +180,7 @@ class clone():
                         elif e[0]=="shoot":
                             self.shoot(e[2],dt)
                         elif e[0]=="die":
-                            self.die()
+                            self.schedule_die()
                             return
                     else:
                         break
@@ -197,7 +197,7 @@ class clone():
             if not ycap==-500:
                 self.vy=0
             if self.y<=-500:
-                self.die()
+                self.schedule_die()
                 channels.cn[1-self.side].get_money(self.cost//2+25)
     def die(self):
         if self.exists:
@@ -210,10 +210,10 @@ class clone():
             self.vy=0
             self.exists=False
 class Projectile():
-    def __init__(self,x,y,vx,vy,enemies,rang,damage,l):
+    def __init__(self,x,y,vx,vy,enemies,rang,damage,game):
         self.x,self.y,self.vx,self.vy=x,y,vx,vy
         self.enemies=enemies
-        self.l=l
+        self.l=game.bullets
         self.l.append(self)
         self.rang=rang
         self.speed=math.sqrt(self.vx**2+self.vy**2)
@@ -235,37 +235,31 @@ class Projectile():
     def die(self,dt):
         self.l.remove(self)
         del self
-def AOE_circle(source,x,y,radius,targets,damage,knockback_x=0,knockback_y=0):
-    for e in targets:
-        if e.exists and (x-e.x)**2+(y-e.y-e.height/2)**2<=radius**2:
-            e.take_damage(damage,source)
-            if (not knockback_x==0) or (not knockback_y==0):
-                e.knockback(knockback_x,knockback_y)
 def AOE_square(source,x,y,radius,targets,damage,knockback_x=0,knockback_y=0):
     for e in targets:
         if rect_intersect(x-radius,y-radius,x+radius,y+radius,e.x-e.width/2,
                           e.y,e.x+e.width/2,e.y+e.height):
-            e.take_damage(damage,source)
             if (not knockback_x==0) or (not knockback_y==0):
                 e.knockback(knockback_x,knockback_y)
+            e.take_damage(damage,source)
 ###################################################################################################
 class BasicGuyBullet(Projectile):
-    def __init__(self,x,y,vx,vy,enemies,rang,damage,l):
-        super().__init__(x,y,vx,vy,enemies,rang,damage,l)
+    def __init__(self,x,y,vx,vy,enemies,rang,damage,game):
+        super().__init__(x,y,vx,vy,enemies,rang,damage,game)
     def on_collision(self,e):
         e.take_damage(self.damage,self)
         pyglet.clock.unschedule(self.die)
         self.die(0)
 class BasicGuy(clone):
     cost=0
-    def __init__(self,mapp,l,bulletlist,side):
-        super().__init__(mapp,l,hp=50,height=70,
+    def __init__(self,game,side):
+        super().__init__(game,hp=50,height=70,
                          width=30,spd=200,jump=600,side=side)
         self.dmg=20
         self.aspd=0.7
         self.bspd=400
         self.rang=400
-        self.bulletlist=bulletlist
+        self.bulletlist=game.bullets
         self.lastshot=0
     def shoot(self,a,dt):
         if self.active:
@@ -282,7 +276,7 @@ class BasicGuy(clone):
                 vx*=-1
             vy=vx*y/x
         a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
-                         self.rang,self.dmg,self.bulletlist)
+                         self.rang,self.dmg,self.game)
     def can_shoot(self):
         if not self.exists:
             return False
@@ -294,12 +288,12 @@ class BasicGuy(clone):
 ###########################################################################################################
 class Mixer(clone):
     cost=0
-    def __init__(self,mapp,l,bulletlist,side):
-        super().__init__(mapp,l,hp=100,height=60,
+    def __init__(self,game,side):
+        super().__init__(game,hp=100,height=60,
                          width=30,spd=300,jump=700,side=side)
         self.dmg=200
         self.lastshot=0
-        self.enemies=l[1-self.side]
+        self.enemies=game.clones[1-self.side]
     def shoot(self,a,dt):
         AOE_square(self,self.x,self.y+self.height*2/3,self.width/2,self.enemies,self.dmg*dt)
     def can_shoot(self):
@@ -311,14 +305,14 @@ class Mixer(clone):
 #########################################################################################################
 class Bazooka(clone):
     cost=500
-    def __init__(self,mapp,l,bulletlist,side):
-        super().__init__(mapp,l,hp=150,height=65,
+    def __init__(self,game,side):
+        super().__init__(game,hp=150,height=65,
                          width=65,spd=200,jump=600,side=side)
         self.dmg=70
         self.aspd=3
         self.bspd=500
         self.rang=800
-        self.bulletlist=bulletlist
+        self.bulletlist=game.bullets
         self.lastshot=0
         self.eradius=150
     def shoot(self,a,dt):
@@ -336,7 +330,7 @@ class Bazooka(clone):
                 vx*=-1
             vy=vx*y/x
         a=BazookaBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
-                         self.rang,self.dmg,self.bulletlist,self.eradius)
+                         self.rang,self.dmg,self.game,self.eradius)
     def can_shoot(self):
         if not self.exists:
             return False
@@ -346,24 +340,24 @@ class Bazooka(clone):
             return True
         return False
 class BazookaBullet(Projectile):
-    def __init__(self,x,y,vx,vy,enemies,rang,damage,l,radius):
-        super().__init__(x,y,vx,vy,enemies,rang,damage,l)
+    def __init__(self,x,y,vx,vy,enemies,rang,damage,game,radius):
+        super().__init__(x,y,vx,vy,enemies,rang,damage,game)
         self.radius=radius
     def on_collision(self,e):
-        AOE_circle(self,self.x,self.y,self.radius,self.enemies,self.damage)
+        AOE_square(self,self.x,self.y,self.radius,self.enemies,self.damage)
         pyglet.clock.unschedule(self.die)
         self.die(0)
 ##################################################################################################################
 class Tele(clone):
     cost=250
-    def __init__(self,mapp,l,bulletlist,side):
-        super().__init__(mapp,l,hp=50,height=80,
+    def __init__(self,game,side):
+        super().__init__(game,hp=50,height=80,
                          width=44,spd=200,jump=600,side=side)
         self.dmg=60
         self.aspd=1.5
         self.lastshot=0
         self.radius=200
-        self.enemies=l[1-side]
+        self.enemies=game.clones[1-side]
         self.phase=255
     def shoot(self,a,dt):
         if self.active:
@@ -385,7 +379,7 @@ class Tele(clone):
             self.exist_time+=dt
             self.phase=min(self.phase+200*dt,255)
             if self.phase==255:
-                AOE_circle(self,self.x,self.y,self.radius,self.enemies,self.dmg)
+                AOE_square(self,self.x,self.y,self.radius,self.enemies,self.dmg)
         else:
             super().move(dt)
     def die(self):
@@ -394,14 +388,14 @@ class Tele(clone):
 #####################################################################
 class Shield(clone):
     cost=400
-    def __init__(self,mapp,l,bulletlist,side):
-        super().__init__(mapp,l,hp=800,height=110,
+    def __init__(self,game,side):
+        super().__init__(game,hp=800,height=110,
                          width=70,spd=100,jump=400,side=side)
         self.dmg=20
         self.aspd=1
         self.bspd=300
         self.rang=300
-        self.bulletlist=bulletlist
+        self.bulletlist=game.bullets
         self.lastshot=0
     def shoot(self,a,dt):
         if self.active:
@@ -418,7 +412,7 @@ class Shield(clone):
                 vx*=-1
             vy=vx*y/x
         a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
-                         self.rang,self.dmg,self.bulletlist)
+                         self.rang,self.dmg,self.game)
     def can_shoot(self):
         if not self.exists:
             return False
@@ -435,14 +429,14 @@ class Shield(clone):
 ##########################################################################################################################################
 class Sprayer(clone):
     cost=500
-    def __init__(self,mapp,l,bulletlist,side):
-        super().__init__(mapp,l,hp=50,height=70,
+    def __init__(self,game,side):
+        super().__init__(game,hp=50,height=70,
                          width=30,spd=200,jump=600,side=side)
         self.dmg=20
         self.aspd=10
         self.bspd=400
         self.rang=400
-        self.bulletlist=bulletlist
+        self.bulletlist=game.bullets
         self.lastshot=0
     def shoot(self,a,dt):
         if self.active:
@@ -460,14 +454,14 @@ class Sprayer(clone):
                         vx*=-1
                     vy=vx*y/x
                 bul=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
-                                     self.rang,self.dmg,self.bulletlist)
+                                     self.rang,self.dmg,self.game)
                 bullet_data.append([vx,vy])
             channels.send_both({"action":"shoot","a":bullet_data,"side":self.side})
             self.log.append(["shoot",self.exist_time,bullet_data])
         else:
             for e in a:
                 bul=BasicGuyBullet(self.x,self.y+self.height/2,e[0],e[1],self.l[1-self.side],
-                                     self.rang,self.dmg,self.bulletlist)
+                                     self.rang,self.dmg,self.game)
     def can_shoot(self):
         if not self.exists:
             return False
@@ -479,11 +473,11 @@ class Sprayer(clone):
 ###########################################################
 class MegaMixer(clone):
     cost=100000
-    def __init__(self,mapp,l,bulletlist,side):
-        super().__init__(mapp,l,hp=50000,height=300,
+    def __init__(self,game,side):
+        super().__init__(game,hp=50000,height=300,
                          width=200,spd=300,jump=700,side=side)
         self.dmg=10000
-        self.enemies=l[1-self.side]
+        self.enemies=game.clones[1-self.side]
         self.succ=100
     def shoot(self,a,dt):
         for e in self.enemies:
@@ -504,13 +498,13 @@ class MegaMixer(clone):
 ################################################################
 class Smash(clone):
     cost=2000
-    def __init__(self,mapp,l,bulletlist,side):
-        super().__init__(mapp,l,hp=2000,height=120,
+    def __init__(self,game,side):
+        super().__init__(game,hp=2000,height=120,
                          width=80,spd=150,jump=600,side=side)
         self.dmg=300
         self.aspd=1
         self.lastshot=0
-        self.enemies=l[1-side]
+        self.enemies=self.l[1-side]
         self.radius=20
     def shoot(self,a,dt):
         if self.active:
@@ -533,14 +527,14 @@ class Smash(clone):
 ############################################################################3
 class MachineGun(clone):
     cost=1000
-    def __init__(self,mapp,l,bulletlist,side):
-        super().__init__(mapp,l,hp=200,height=70,
+    def __init__(self,game,side):
+        super().__init__(game,hp=200,height=70,
                          width=30,spd=140,jump=500,side=side)
         self.dmg=2
         self.aspd=0.0
         self.bspd=800
         self.rang=550
-        self.bulletlist=bulletlist
+        self.bulletlist=game.bullets
         self.lastshot=0
     def shoot(self,a,dt):
         if self.active:
@@ -557,7 +551,7 @@ class MachineGun(clone):
                 vx*=-1
             vy=vx*y/x
         a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
-                         self.rang,self.dmg,self.bulletlist)
+                         self.rang,self.dmg,self.game)
     def can_shoot(self):
         if not self.exists:
             return False
@@ -569,18 +563,18 @@ class MachineGun(clone):
 #################################################################################
 class Tank(clone):
     cost=5000
-    def __init__(self,mapp,l,bulletlist,side):
-        super().__init__(mapp,l,hp=5000,height=80,
+    def __init__(self,game,side):
+        super().__init__(game,hp=5000,height=80,
                          width=150,spd=100,jump=0,side=side)
         self.dmg=500
         self.aspd=3
         self.bspd=1000
         self.rang=1000
-        self.bulletlist=bulletlist
+        self.bulletlist=game.bullets
         self.lastshot=0
         self.eradius=80
         self.dmg2=100
-        self.enemies=l[1-side]
+        self.enemies=self.l[1-side]
     def shoot(self,a,dt):
         if self.active:
             channels.send_both({"action":"shoot","a":a,"side":self.side})
@@ -596,7 +590,7 @@ class Tank(clone):
                 vx*=-1
             vy=vx*y/x
         a=BazookaBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
-                         self.rang,self.dmg,self.bulletlist,self.eradius)
+                         self.rang,self.dmg,self.game,self.eradius)
     def can_shoot(self):
         if not self.exists:
             return False
@@ -620,15 +614,15 @@ class Tank(clone):
 ################################################################################
 class Engi(clone):
     cost=5000
-    def __init__(self,mapp,l,bulletlist,side):
-        super().__init__(mapp,l,hp=50,height=70,
+    def __init__(self,game,side):
+        super().__init__(game,hp=50,height=70,
                          width=30,spd=200,jump=600,side=side)
-        self.bulletlist=bulletlist
+        self.bulletlist=game.bullets
         self.lastshot=0
         self.turrets=[]
         self.aspd=1
     def shoot(self,a,dt):
-        Turret(self.mapp,self.l,self.bulletlist,self.side,self.turrets,self.x,self.y)
+        Turret(self.game,self.side,self.turrets,self.x,self.y)
         if self.active:
             channels.send_both({"action":"shoot","a":a,"side":self.side})
             self.log.append(["shoot",self.exist_time,a])
@@ -641,20 +635,22 @@ class Engi(clone):
             return True
         return False
 class Turret(clone):
-    def __init__(self,mapp,l,bulletlist,side,l2,x,y):
-        super().__init__(mapp,l,hp=50,height=70,
+    def __init__(self,game,side,l2,x,y):
+        super().__init__(game,hp=50,height=70,
                          width=30,spd=200,jump=600,side=side)
         self.l2=l2
         l2.append(self)
-        self.bulletlist=bulletlist
+        self.bulletlist=game.bullets
         self.lastshot=0
         self.aspd=0.1
         self.bspd=500
         self.rang=500
-        self.dmg=20
+        self.dmg=10
         self.x,self.y=x,y
         self.exists=True
         self.enemies=self.l[1-self.side]
+    def start(self):
+        self.schedule_die()
     def die(self):
         self.l[self.side].remove(self)
         self.l2.remove(self)
@@ -664,7 +660,7 @@ class Turret(clone):
         if self.exists:
             self.hp-=amount
             if self.hp<=0:
-                self.die()
+                self.schedule_die()
     def move(self,dt):
         if self.exists:
             if self.can_shoot():
@@ -686,7 +682,7 @@ class Turret(clone):
             if not ycap==-500:
                 self.vy=0
             if self.y<=-500:
-                self.die()
+                self.schedule_die()
     def can_shoot(self):
         if not self.exists:
             return False
@@ -717,18 +713,18 @@ class Turret(clone):
                 vx*=-1
             vy=vx*y/x
         a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
-                         self.rang,self.dmg,self.bulletlist)
+                         self.rang,self.dmg,self.game)
 ############################################################################
 class MegaSmash(clone):
     cost=20000
-    def __init__(self,mapp,l,bulletlist,side):
-        super().__init__(mapp,l,hp=5000,height=300,
+    def __init__(self,game,side):
+        super().__init__(game,hp=10000,height=300,
                          width=200,spd=150,jump=1100,side=side)
         self.dmg=1500
         self.aspd=1
         self.lastshot=0
-        self.enemies=l[1-side]
-        self.radius=150
+        self.enemies=self.l[1-side]
+        self.radius=100
     def shoot(self,a,dt):
         if self.active:
             channels.send_both({"action":"shoot","a":a,"side":self.side})

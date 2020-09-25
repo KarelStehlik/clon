@@ -19,6 +19,7 @@ class Game():
         self.gravity=gravity
         self.bullets=[]
         self.particles=[]
+        self.deadclones=[]
     def start_round(self):
         for e in self.clones[0]:
             e.start()
@@ -34,6 +35,9 @@ class Game():
                     self.connection.Send({"action": "shoot",
                                      "a": [mousex/SPRITE_SIZE_MULT-1280/2,
                                      mousey/SPRITE_SIZE_MULT-a.y-a.height/2]})
+        for i in range(len(self.deadclones)):
+            deed=self.deadclones.pop(0)
+            deed.die()
         for e in self.clones[0]:
             e.move(dt)
             e.vy-=self.gravity*dt
@@ -140,14 +144,17 @@ class clone():
         self.exists=True
         self.log_completed=0
         self.exist_time=0
+    def schedule_die(self):
+        if self.exists:
+            self.game.deadclones.append(self)
     def update_health(self,health):
         self.hp=health
         if self.hp<=0:
-            self.die()
+            self.schedule_die()
             return
         self.hpbar.scale_x=self.hp/self.maxhp
     def take_damage(self,amount,source):
-        if not self.active:
+        if self.exists and not self.active:
             self.update_health(self.hp-amount)
     def update_pos(self,x,y):
         self.sprite.update(x=(x-camx)*SPRITE_SIZE_MULT,y=y*SPRITE_SIZE_MULT)
@@ -210,7 +217,7 @@ class clone():
                         elif e[0]=="shoot":
                             self.shoot(e[2],dt)
                         elif e[0]=="die":
-                            self.die()
+                            self.schedule_die()
                             return
                     else:
                         break
@@ -227,7 +234,7 @@ class clone():
                 if not ycap==-500:
                     self.vy=0
                 if self.y<=-500:
-                    self.die()
+                    self.schedule_die()
             self.update_pos(self.x,self.y)
     def die(self):
         if self.exists:
@@ -272,19 +279,13 @@ class Projectile():
         self.l.remove(self)
         self.sprite.delete()
         del self
-def AOE_circle(source,x,y,radius,targets,damage,knockback_x=0,knockback_y=0):
-    for e in targets:
-        if e.exists and (x-e.x)**2+(y-e.y-e.height/2)**2<=radius**2:
-            e.take_damage(damage,source)
-            if (not knockback_x==0) or (not knockback_y==0):
-                e.knockback(knockback_x,knockback_y)
 def AOE_square(source,x,y,radius,targets,damage,knockback_x=0,knockback_y=0):
     for e in targets:
         if rect_intersect(x-radius,y-radius,x+radius,y+radius,e.x-e.width/2,
                           e.y,e.x+e.width/2,e.y+e.height):
-            e.take_damage(damage,source)
             if (not knockback_x==0) or (not knockback_y==0):
                 e.knockback(knockback_x,knockback_y)
+            e.take_damage(damage,source)
 ###################################################################################################
 class BasicGuyBullet(Projectile):
     def __init__(self,x,y,vx,vy,game,side,rang,damage):
@@ -390,7 +391,7 @@ class BazookaBullet(Projectile):
         else:
             self.sprite.rotation=180-math.atan(vy/vx)*180/math.pi
     def on_collision(self,e):
-        AOE_circle(self,self.x,self.y,self.radius,self.enemies,self.damage)
+        AOE_square(self,self.x,self.y,self.radius,self.enemies,self.damage)
         fire(self.x,self.y,0,0.5,self.game,growth=self.radius/150)
         pyglet.clock.unschedule(self.die)
         self.die(0)
@@ -426,7 +427,7 @@ class Tele(clone):
             self.phase=min(self.phase+200*dt,255)
             self.sprite.opacity=self.phase
             if self.phase==255:
-                AOE_circle(self,self.x,self.y,self.radius,self.enemies,self.dmg)
+                AOE_square(self,self.x,self.y,self.radius,self.enemies,self.dmg)
         else:
             super().move(dt)
     def die(self):
@@ -703,12 +704,14 @@ class Turret(clone):
         self.aspd=0.1
         self.bspd=500
         self.rang=500
-        self.dmg=20
+        self.dmg=10
         self.update_pos(x,y)
         self.exists=True
         self.active=False
         self.additional_images=[]
         self.enemies=game.clones[1-self.side]
+    def start(self):
+        self.schedule_die()
     def die(self):
         self.game.clones[self.side].remove(self)
         self.l2.remove(self)
@@ -735,7 +738,7 @@ class Turret(clone):
             if not ycap==-500:
                 self.vy=0
             if self.y<=-500:
-                self.die()
+                self.schedule_die()
             self.update_pos(self.x,self.y)
     def can_shoot(self):
         if not self.exists:
@@ -774,7 +777,7 @@ class MegaSmash(clone):
     imageG=images.MSmashG
     imageR=images.MSmashR
     def __init__(self,game,side):
-        super().__init__(game,hp=5000,height=300,
+        super().__init__(game,hp=10000,height=300,
                          width=200,spd=150,jump=1100,side=side)
         self.dmg=1500
         self.aspd=1
@@ -782,7 +785,7 @@ class MegaSmash(clone):
         self.enemies=game.clones[1-side]
         self.smashing="none"
         self.smashing_time=0
-        self.radius=150
+        self.radius=100
         if side==0:
             self.spryte=pyglet.sprite.Sprite(self.imageG,10,100,batch=None,group=dudeg)
             self.left=pyglet.sprite.Sprite(images.MSmashGL,self.sprite.x,self.sprite.y,batch=None,group=dudeg)
