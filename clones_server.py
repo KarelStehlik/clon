@@ -83,7 +83,7 @@ class clone():
         self.log=[]
         self.log_completed=0
         self.exist_time=0
-        game.clones[self.side]+=[self]
+        game.clones[self.side].append(self)
         self.l=game.clones
         self.facing=1
         if self.side==0:
@@ -125,8 +125,7 @@ class clone():
         if self.exists:
             if self.active:
                 self.log.append(["a",self.exist_time])
-            self.facing=-1
-            self.moving=-1
+            self.facing=self.moving=-1
             if not self.move_locked:
                 self.vx=-self.spd
     def move_stop(self):
@@ -140,8 +139,7 @@ class clone():
         if self.exists:
             if self.active:
                 self.log.append(["d",self.exist_time])
-            self.facing=1
-            self.moving=1
+            self.facing=self.moving=1
             if not self.move_locked:
                 self.vx=self.spd
     def w(self):
@@ -205,9 +203,7 @@ class clone():
                 self.log.append(["die",self.exist_time+0.1])
                 self.active=False
                 self.log.sort(key=take_second)
-            self.vx=0
-            self.moving=0
-            self.vy=0
+            self.moving=self.vy=self.vx=0
             self.exists=False
 class Projectile():
     def __init__(self,x,y,vx,vy,enemies,rang,damage,game):
@@ -259,7 +255,6 @@ class BasicGuy(clone):
         self.aspd=0.7
         self.bspd=400
         self.rang=400
-        self.bulletlist=game.bullets
         self.lastshot=0
     def shoot(self,a,dt):
         if self.active:
@@ -312,7 +307,6 @@ class Bazooka(clone):
         self.aspd=3
         self.bspd=500
         self.rang=800
-        self.bulletlist=game.bullets
         self.lastshot=0
         self.eradius=150
     def shoot(self,a,dt):
@@ -395,7 +389,6 @@ class Shield(clone):
         self.aspd=1
         self.bspd=300
         self.rang=300
-        self.bulletlist=game.bullets
         self.lastshot=0
     def shoot(self,a,dt):
         if self.active:
@@ -436,7 +429,6 @@ class Sprayer(clone):
         self.aspd=10
         self.bspd=400
         self.rang=400
-        self.bulletlist=game.bullets
         self.lastshot=0
     def shoot(self,a,dt):
         if self.active:
@@ -534,7 +526,6 @@ class MachineGun(clone):
         self.aspd=0.0
         self.bspd=800
         self.rang=550
-        self.bulletlist=game.bullets
         self.lastshot=0
     def shoot(self,a,dt):
         if self.active:
@@ -570,7 +561,6 @@ class Tank(clone):
         self.aspd=3
         self.bspd=1000
         self.rang=1000
-        self.bulletlist=game.bullets
         self.lastshot=0
         self.eradius=80
         self.dmg2=100
@@ -617,7 +607,6 @@ class Engi(clone):
     def __init__(self,game,side):
         super().__init__(game,hp=50,height=70,
                          width=30,spd=200,jump=600,side=side)
-        self.bulletlist=game.bullets
         self.lastshot=0
         self.turrets=[]
         self.aspd=1
@@ -640,7 +629,6 @@ class Turret(clone):
                          width=30,spd=200,jump=600,side=side)
         self.l2=l2
         l2.append(self)
-        self.bulletlist=game.bullets
         self.lastshot=0
         self.aspd=0.1
         self.bspd=500
