@@ -2,6 +2,10 @@ import pyglet
 from constants import *
 gunmanR=pyglet.resource.image("imagefolder/BGunman.png")
 gunmanG=pyglet.resource.image("imagefolder/GGunman.png")
+engiR=pyglet.resource.image("imagefolder/BEngi.png")
+engiG=pyglet.resource.image("imagefolder/GEngi.png")
+turretR=pyglet.resource.image("imagefolder/BTurret.png")
+turretG=pyglet.resource.image("imagefolder/GTurret.png")
 mixerR=pyglet.resource.image("imagefolder/BMixer.png")
 mixerG=pyglet.resource.image("imagefolder/GMixer.png")
 megamixerR=pyglet.resource.image("imagefolder/BMegaMixer.png")
@@ -71,6 +75,18 @@ gunmanG.height=70*SPRITE_SIZE_MULT
 gunmanR.width=40*SPRITE_SIZE_MULT
 gunmanR.height=70*SPRITE_SIZE_MULT
 
+engiG.width=40*SPRITE_SIZE_MULT
+engiG.height=70*SPRITE_SIZE_MULT
+engiR.width=40*SPRITE_SIZE_MULT
+engiR.height=70*SPRITE_SIZE_MULT
+
+turretG.width=60*SPRITE_SIZE_MULT
+turretG.height=54*SPRITE_SIZE_MULT
+turretR.width=60*SPRITE_SIZE_MULT
+turretR.height=54*SPRITE_SIZE_MULT
+turretG.anchor_x=15
+turretR.anchor_x=15
+
 mixerG.width=35*SPRITE_SIZE_MULT
 mixerG.height=60*SPRITE_SIZE_MULT
 mixerR.width=35*SPRITE_SIZE_MULT
@@ -102,7 +118,7 @@ ShieldG.anchor_x=20*SPRITE_SIZE_MULT
 ShieldR.anchor_x=20*SPRITE_SIZE_MULT
 
 for e in [gunmanG,gunmanR,mixerG,mixerR,teleG,teleR,sprayerG,sprayerR,megamixerG,
-          megamixerR,fire]:
+          megamixerR,fire,engiG,engiR]:
     e.anchor_x=e.width//2
 fire.anchor_y=fire.height//2
 gunmanG.anchor_x-=5*SPRITE_SIZE_MULT

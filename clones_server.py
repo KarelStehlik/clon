@@ -371,7 +371,7 @@ class Tele(clone):
     def move(self,dt):
         if (not self.phase==255) and self.exists:
             self.exist_time+=dt
-            self.phase=min(self.phase+200*dt,255)
+            self.phase=min(self.phase+300*dt,255)
             if self.phase==255:
                 AOE_square(self,self.x,self.y,self.radius,self.enemies,self.dmg)
         else:
@@ -480,7 +480,7 @@ class MegaMixer(clone):
                     e.x-=self.succ*dt
                 if e.y>self.y+self.height:
                     e.y-=1
-        AOE_square(self,self.x,self.y+self.height*2/3,self.width/2,self.enemies,self.dmg*dt)
+        AOE_square(self,self.x,self.y+self.height/2,self.width/2,self.enemies,self.dmg*dt)
     def can_shoot(self):
         return False
     def move(self,dt):
@@ -625,7 +625,7 @@ class Engi(clone):
         return False
 class Turret(clone):
     def __init__(self,game,side,l2,x,y):
-        super().__init__(game,hp=50,height=70,
+        super().__init__(game,hp=50,height=60,
                          width=30,spd=200,jump=600,side=side)
         self.l2=l2
         l2.append(self)

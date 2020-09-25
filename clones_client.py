@@ -424,7 +424,7 @@ class Tele(clone):
         if self.phase != 255:
             self.exist_time+=dt
             self.update_pos(self.x,self.y)
-            self.phase=min(self.phase+200*dt,255)
+            self.phase=min(self.phase+300*dt,255)
             self.sprite.opacity=self.phase
             if self.phase==255:
                 AOE_square(self,self.x,self.y,self.radius,self.enemies,self.dmg)
@@ -513,7 +513,7 @@ class MegaMixer(clone):
                     e.x-=self.succ*dt
                 if e.y>self.y+self.height:
                     e.y-=self.succ*dt
-        AOE_square(self,self.x,self.y+self.height*2/3,self.width/2,self.enemies,self.dmg*dt)
+        AOE_square(self,self.x,self.y+self.height/2,self.width/2,self.enemies,self.dmg*dt)
     def can_shoot(self):
         return False
     def move(self,dt):
@@ -674,8 +674,8 @@ class Tank(clone):
 ######################################################################################
 class Engi(clone):
     cost=5000
-    imageG=images.gunmanG
-    imageR=images.gunmanR
+    imageG=images.engiG
+    imageR=images.engiR
     def __init__(self,game,side):
         super().__init__(game,hp=50,height=70,
                          width=30,spd=200,jump=600,side=side)
@@ -693,10 +693,10 @@ class Engi(clone):
             return True
         return False
 class Turret(clone):
-    imageG=images.gunmanG
-    imageR=images.gunmanR
+    imageG=images.turretG
+    imageR=images.turretR
     def __init__(self,game,side,l2,x,y):
-        super().__init__(game,hp=50,height=70,
+        super().__init__(game,hp=50,height=60,
                          width=30,spd=200,jump=600,side=side)
         self.l2=l2
         l2.append(self)
@@ -757,6 +757,12 @@ class Turret(clone):
                     d=de
                     target=e
         if d<self.rang**2:
+            if target.x>self.x and self.facing==-1:
+                self.facing=1
+                self.sprite.scale_x=1
+            elif target.x<self.x and self.facing==1:
+                self.facing=-1
+                self.sprite.scale_x=-1
             self.shoot([target.x-self.x,target.y+target.height/2-self.y-self.height/2])
     def shoot(self,a):
         x=a[0]
