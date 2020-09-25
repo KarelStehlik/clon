@@ -52,14 +52,14 @@ class particle():
         self.sprite=pyglet.sprite.Sprite(self.img,x,y,
                                          batch=game.batch,
                                          group=projectileg)
-        self.sprite.scale=size/self.sprite.width
+        self.sprite.scale=SPRITE_SIZE_MULT*size/self.sprite.width
         self.existtime=0
         self.duration=duration
         game.particles.append(self)
         self.game=game
     def tick(self,dt):
         self.existtime+=dt
-        self.sprite.x,self.sprite.y=self.x-camx,self.y
+        self.sprite.x,self.sprite.y=SPRITE_SIZE_MULT*(self.x-camx),SPRITE_SIZE_MULT*(self.y)
         if self.existtime>self.duration:
             self.die()
     def die(self):
