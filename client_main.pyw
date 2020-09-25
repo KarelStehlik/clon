@@ -18,16 +18,16 @@ class MyNetworkListener(ConnectionListener):
         place.main=place.current_mode=mode_testing(place,place.mainBatch,mapp=data["mapp"])
     def Network_stop(self,data):
         #print(data["action"])
-        place.main.current_clones[data["side"]].move_stop()
+        place.main.game.current_clones[data["side"]].move_stop()
     def Network_A(self,data):
         #print(data["action"])
-        place.main.current_clones[data["side"]].a_start()
+        place.main.game.current_clones[data["side"]].a_start()
     def Network_D(self,data):
         #print(data["action"])
-        place.main.current_clones[data["side"]].d_start()
+        place.main.game.current_clones[data["side"]].d_start()
     def Network_jump(self,data):
         #print(data["action"])
-        place.main.current_clones[data["side"]].w()
+        place.main.game.current_clones[data["side"]].w()
     def Network_summon(self,data):
         #print(data["action"])
         place.main.summon_clone(data["c"],data["s"])
@@ -37,20 +37,20 @@ class MyNetworkListener(ConnectionListener):
         place.main.start_round()
     def Network_endround(self,data):
         #print(data["action"])
-        place.main.current_clones[0].die()
-        place.main.current_clones[1].die()
-        place.main.current_clones[0].log=data["log0"]
-        place.main.current_clones[1].log=data["log1"]
+        place.main.game.current_clones[0].die()
+        place.main.game.current_clones[1].die()
+        place.main.game.current_clones[0].log=data["log0"]
+        place.main.game.current_clones[1].log=data["log1"]
         place.cc.start(side)
     def Network_shoot(self,data):
         #print(data["action"])
-        place.main.current_clones[data["side"]].shoot(data["a"],0)
+        place.main.game.current_clones[data["side"]].shoot(data["a"],0)
     def Network_update(self,data):
         #print(data["action"])
-        place.main.current_clones[0].update_health(data["hp0"])
-        place.main.current_clones[1].update_health(data["hp1"])
-        place.main.current_clones[0].update_pos(data["x0"],data["y0"])
-        place.main.current_clones[1].update_pos(data["x1"],data["y1"])
+        place.main.game.current_clones[0].update_health(data["hp0"])
+        place.main.game.current_clones[1].update_health(data["hp1"])
+        place.main.game.current_clones[0].update_pos(data["x0"],data["y0"])
+        place.main.game.current_clones[1].update_pos(data["x1"],data["y1"])
     def Network_update_money(self,data):
         place.money=data["money"]
 nwl=MyNetworkListener()
@@ -171,7 +171,8 @@ class mappClass():
 class mode_testing(mode):
     def __init__(self,win,batch,**kw):
         super().__init__(win,batch)
-        self.player_side=0
+        global side
+        self.side=side
         self.camx=0
         self.batch=batch
         bg=pyglet.graphics.OrderedGroup(0)
@@ -185,52 +186,29 @@ class mode_testing(mode):
         else:
             self.mapp=random.choice(maps.maps)
         self.gravity=1000
-        self.clones=[[],[]]
-        self.bullets=[]
-        self.current_clones=[None,None]
         self.total_time=0
         self.mapp=mappClass(self.mapp,batch)
+        self.game=clones.Game(self.mapp,self.batch,connection,self.gravity,side=self.side)
     def start_round(self):
         self.win.current_mode=self
-        for e in self.clones[0]:
-            e.start()
-        for e in self.clones[1]:
-            e.start()
+        self.game.start_round()
     def summon_clone(self,n,side):
-        self.current_clones[side]=(clones.possible_units)[n](self.mapp,
-                                                                self.clones,
-                                                                self.bullets,
-                                                                self.batch,
-                                                                side)
+        self.game.summon(n,side)
     def mouse_drag(self,x, y, dx, dy, button, modifiers):
         self.mouse_move(x,y,dx,dy)
     def tick(self,dt):
-        global side
-        if not self.current_clones[side]==None:
+        if not self.game.current_clones[self.side]==None:
             self.total_time+=dt
-            self.camx=self.current_clones[side].vpoint
+            self.camx=self.game.get_vpoint()
             cx=self.camx
-            if self.win.mouseheld:
-                a=self.current_clones[side]
-                if a.can_shoot():
-                    connection.Send({"action": "shoot",
-                                     "a": [self.mousex/SPRITE_SIZE_MULT+cx-a.vpoint-1280/2,
-                                     self.mousey/SPRITE_SIZE_MULT-a.y-a.height/2]})
             if self.background.x>=0:
                 self.bg_shift-=1
             elif self.background.x<=-self.half_bg_width:
                 self.bg_shift+=1
             clones.camx=cx
             self.background.x=-cx+self.bg_shift*self.half_bg_width
-            for e in self.clones[0]:
-                e.move(dt)
-                e.vy-=self.gravity*dt
-            for e in self.clones[1]:
-                e.move(dt)
-                e.vy-=self.gravity*dt
             self.mapp.update(cx)
-            for e in self.bullets:
-                e.move(dt)
+            self.game.tick(dt,self.win.mouseheld,self.mousex,self.mousey)
             super().tick(dt)
     def key_press(self,symbol,modifiers):
         if symbol==key.A:
@@ -243,9 +221,9 @@ class mode_testing(mode):
         if (symbol==key.A and not self.win.keys[key.D]) or (symbol==key.D and not self.win.keys[key.A]):
             connection.Send({"action": "stop"})
         elif symbol==key.A:
-            self.current_clones[self.player_side].d_start()
+            connection.Send({"action": "D"})
         elif symbol==key.D:
-            self.current_clones[self.player_side].a_start()
+            connection.Send({"action": "A"})
 
 class windoo(pyglet.window.Window):
     def start(self):
@@ -315,4 +293,5 @@ while True:
         nwl.Pump()
     except Exception as a:
         place.close()
+        place.dispatch_events()
         raise(a)

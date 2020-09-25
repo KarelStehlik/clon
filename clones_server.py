@@ -8,6 +8,62 @@ from constants import *
 import serverchannels as channels
 dudeg=pyglet.graphics.OrderedGroup(2)
 ID=0
+class Game():
+    def __init__(self,mapp,gravity):
+        self.clones=[[],[]]
+        self.current_clones=[None,None]
+        self.mapp=mapp
+        self.gravity=gravity
+        self.bullets=[]
+    def start_round(self):
+        for e in self.clones[0]:
+            e.start()
+        for e in self.clones[1]:
+            e.start()
+    def summon(self,n,side):
+        self.current_clones[side]=possible_units[n](self.mapp,
+                                                    self.clones,
+                                                    self.bullets,
+                                                    side)
+    def tick(self,dt):
+        for e in self.clones[0]:
+            e.move(dt)
+            e.vy-=self.gravity*dt
+        for e in self.clones[1]:
+            e.move(dt)
+            e.vy-=self.gravity*dt
+        for e in self.bullets:
+            e.move(dt)
+        channels.send_both({"action":"update",
+                                "hp0":self.current_clones[0].hp,
+                                "hp1":self.current_clones[1].hp,
+                                "x0":self.current_clones[0].x,
+                                "y0":self.current_clones[0].y,
+                                "x1":self.current_clones[1].x,
+                                "y1":self.current_clones[1].y})
+    def end_round(self):
+        self.current_clones[0].die()
+        self.current_clones[1].die()
+        channels.send_both({"action":"endround","log0":self.current_clones[0].log,
+                   "log1":self.current_clones[1].log})
+    def summon_clones(self,c0,c1):
+        self.current_clones[0]=(possible_units)[c0](self.mapp,
+                                                        self.clones,
+                                                        self.bullets,
+                                                        0)
+        self.current_clones[1]=(possible_units)[c1](self.mapp,
+                                                        self.clones,
+                                                        self.bullets,
+                                                        1)
+        channels.send_both({"action":"summon","c":c0,"s":0})
+        channels.send_both({"action":"summon","c":c1,"s":1})
+        self.start_round()
+    def start_round(self):
+        channels.send_both({"action":"start_round"})
+        for e in self.clones[0]:
+            e.start()
+        for e in self.clones[1]:
+            e.start()
 def rect_intersect(ax1,ay1,ax2,ay2,bx1,by1,bx2,by2):
     return ax1<=bx2 and bx1<=ax2 and ay1<=by2 and by1<=ay2
 def take_second(l):
@@ -304,7 +360,7 @@ class Tele(clone):
         super().__init__(mapp,l,hp=50,height=80,
                          width=44,spd=200,jump=600,side=side)
         self.dmg=60
-        self.aspd=3
+        self.aspd=1.5
         self.lastshot=0
         self.radius=200
         self.enemies=l[1-side]
@@ -327,7 +383,7 @@ class Tele(clone):
     def move(self,dt):
         if (not self.phase==255) and self.exists:
             self.exist_time+=dt
-            self.phase=min(self.phase+150*dt,255)
+            self.phase=min(self.phase+200*dt,255)
             if self.phase==255:
                 AOE_circle(self,self.x,self.y,self.radius,self.enemies,self.dmg)
         else:
@@ -339,7 +395,7 @@ class Tele(clone):
 class Shield(clone):
     cost=400
     def __init__(self,mapp,l,bulletlist,side):
-        super().__init__(mapp,l,hp=500,height=110,
+        super().__init__(mapp,l,hp=800,height=110,
                          width=70,spd=100,jump=400,side=side)
         self.dmg=20
         self.aspd=1
@@ -480,7 +536,7 @@ class MachineGun(clone):
     def __init__(self,mapp,l,bulletlist,side):
         super().__init__(mapp,l,hp=200,height=70,
                          width=30,spd=140,jump=500,side=side)
-        self.dmg=1.4
+        self.dmg=2
         self.aspd=0.0
         self.bspd=800
         self.rang=550
@@ -561,53 +617,9 @@ class Tank(clone):
             self.shoot2(dt)
     def knockback(self,a,b):
         super().knockback(a/4,b/3)
-#############################################################################
-class Squad():
-    cost=0
-    def __init__(self,mapp,l,bulletlist,side):
-        self.clones=[]
-        self.clones.append(BasicGuy(mapp,l,bulletlist,side))
-        self.clones.append(Tank(mapp,l,bulletlist,side))
-        self.active=True
-        self.exists=True
-        self.hp=[e.hp for e in self.clones]
-        self.x=[e.x for e in self.clones]
-        self.y=[e.y for e in self.clones]
-    def a_start(self):
-        for e in self.clones:
-            e.a_start()
-    def move_stop(self):
-        for e in self.clones:
-            e.move_stop()
-    def d_start(self):
-        for e in self.clones:
-            e.d_start()
-    def w(self):
-        for e in self.clones:
-            e.w()
-    def move(self,dt):
-        for e in self.clones:
-            e.move(dt)
-        self.hp=[e.hp for e in self.clones]
-        self.x=[e.x for e in self.clones]
-        self.y=[e.y for e in self.clones]
-    def die(self):
-        if self.exists:
-            if self.active:
-                self.active=False
-            self.exists=False
-        for e in self.clones:
-            e.die()
-    def can_shoot(self):
-        c=self.clones
-        return c[0].can_shoot() or c[1].can_shoot()
-    def shoot(self,a,dt):
-        for e in self.clones:
-            if e.can_shoot():
-                e.shoot(a,dt)
 ################################################################################
 class Engi(clone):
-    cost=0
+    cost=5000
     def __init__(self,mapp,l,bulletlist,side):
         super().__init__(mapp,l,hp=50,height=70,
                          width=30,spd=200,jump=600,side=side)
@@ -708,24 +720,24 @@ class Turret(clone):
                          self.rang,self.dmg,self.bulletlist)
 ############################################################################
 class MegaSmash(clone):
-    cost=0
+    cost=20000
     def __init__(self,mapp,l,bulletlist,side):
-        super().__init__(mapp,l,hp=10000,height=300,
+        super().__init__(mapp,l,hp=5000,height=300,
                          width=200,spd=150,jump=1100,side=side)
         self.dmg=1500
         self.aspd=1
         self.lastshot=0
         self.enemies=l[1-side]
-        self.radius=50
+        self.radius=150
     def shoot(self,a,dt):
         if self.active:
             channels.send_both({"action":"shoot","a":a,"side":self.side})
             self.log.append(["shoot",self.exist_time,a])
         if a[0]<=0:
-            AOE_square(self,self.x-80,self.y+self.height/2,self.radius,self.enemies,self.dmg,
+            AOE_square(self,self.x-80,self.y+self.height/3,self.radius,self.enemies,self.dmg,
                        knockback_x=-2500,knockback_y=1000)
         else:
-            AOE_square(self.x+80,self.y+self.height/2,self.radius,self.enemies,self.dmg,
+            AOE_square(self,self.x+80,self.y+self.height/3,self.radius,self.enemies,self.dmg,
                        knockback_x=2500,knockback_y=1000)
     def can_shoot(self):
         if not self.exists:
@@ -736,5 +748,5 @@ class MegaSmash(clone):
             return True
         return False
 #################################################################################3
-possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,
-                MegaSmash,Tank,MegaMixer,Engi]#,Squad]
+possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,Engi,
+                Tank,MegaSmash,MegaMixer]

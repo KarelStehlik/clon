@@ -34,12 +34,32 @@ for e in [SmashRR,SmashGR]:
 for e in [SmashRL,SmashGL]:
     e.anchor_x=60*SPRITE_SIZE_MULT
 
+MSmashR=pyglet.resource.image("imagefolder/BMSmash.png")
+MSmashG=pyglet.resource.image("imagefolder/GMSmash.png")
+MSmashRL=pyglet.resource.image("imagefolder/BMSmashL.png")
+MSmashGL=pyglet.resource.image("imagefolder/GMSmashL.png")
+MSmashRR=pyglet.resource.image("imagefolder/BMSmashR.png")
+MSmashGR=pyglet.resource.image("imagefolder/GMSmashR.png")
+for e in [MSmashR,MSmashG]:
+    e.width=235*SPRITE_SIZE_MULT
+    e.height=300*SPRITE_SIZE_MULT
+    e.anchor_x=e.width//2
+for e in [MSmashRL,MSmashGL,MSmashRR,MSmashGR]:
+    e.width=250*SPRITE_SIZE_MULT
+    e.height=300*SPRITE_SIZE_MULT
+for e in [MSmashRR,MSmashGR]:
+    e.anchor_x=100*SPRITE_SIZE_MULT
+for e in [MSmashRL,MSmashGL]:
+    e.anchor_x=150*SPRITE_SIZE_MULT
+
+fire=pyglet.resource.image("imagefolder/fire.png")
+
 tankR=pyglet.resource.image("imagefolder/BTank.png")
 tankG=pyglet.resource.image("imagefolder/GTank.png")
 for e in [tankR,tankG]:
-    e.width=150
-    e.height=80
-    e.anchor_x=75
+    e.width=250
+    e.height=90
+    e.anchor_x=60
 
 sprayerG.width=60*SPRITE_SIZE_MULT
 sprayerG.height=80*SPRITE_SIZE_MULT
@@ -82,8 +102,9 @@ ShieldG.anchor_x=20*SPRITE_SIZE_MULT
 ShieldR.anchor_x=20*SPRITE_SIZE_MULT
 
 for e in [gunmanG,gunmanR,mixerG,mixerR,teleG,teleR,sprayerG,sprayerR,megamixerG,
-          megamixerR]:
+          megamixerR,fire]:
     e.anchor_x=e.width//2
+fire.anchor_y=fire.height//2
 gunmanG.anchor_x-=5*SPRITE_SIZE_MULT
 gunmanR.anchor_x-=5*SPRITE_SIZE_MULT
 
