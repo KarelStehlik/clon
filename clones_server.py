@@ -99,6 +99,7 @@ class clone():
         self.shoot_queue.append(a)
     def schedule_die(self):
         if self.exists:
+            self.exists=False
             self.game.deadclones.append(self)
     def start(self):
         if self.side==0:
@@ -198,13 +199,12 @@ class clone():
                 self.schedule_die()
                 channels.cn[1-self.side].get_money(self.cost//2+25)
     def die(self):
-        if self.exists:
-            if self.active:
-                self.log.append(["die",self.exist_time+0.1])
-                self.active=False
-                self.log.sort(key=take_second)
-            self.moving=self.vy=self.vx=0
-            self.exists=False
+        if self.active:
+            self.log.append(["die",self.exist_time+0.1])
+            self.active=False
+            self.log.sort(key=take_second)
+        self.moving=self.vy=self.vx=0
+        self.exists=False
 class Projectile():
     def __init__(self,x,y,vx,vy,enemies,rang,damage,game):
         self.x,self.y,self.vx,self.vy=x,y,vx,vy
@@ -640,11 +640,10 @@ class Turret(clone):
     def start(self):
         self.schedule_die()
     def die(self):
-        if self.exists:
-            self.l[self.side].remove(self)
-            self.l2.remove(self)
-            self.exists=False
-            del self
+        self.l[self.side].remove(self)
+        self.l2.remove(self)
+        self.exists=False
+        del self
     def take_damage(self,amount,source):
         if self.exists:
             self.hp-=amount

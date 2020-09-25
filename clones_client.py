@@ -146,6 +146,7 @@ class clone():
         self.exist_time=0
     def schedule_die(self):
         if self.exists:
+            self.exists=False
             self.game.deadclones.append(self)
     def update_health(self,health):
         self.hp=health
@@ -237,17 +238,16 @@ class clone():
                     self.schedule_die()
             self.update_pos(self.x,self.y)
     def die(self):
-        if self.exists:
-            if self.active:
-                self.active=False
-                self.log.sort(key=take_second)
-                self.additional_images=[]
-            self.vx=0
-            self.vy=0
-            self.moving=0
-            self.sprite.batch=None
-            self.hpbar.batch=None
-            self.exists=False
+        if self.active:
+            self.active=False
+            self.log.sort(key=take_second)
+            self.additional_images=[]
+        self.vx=0
+        self.vy=0
+        self.moving=0
+        self.sprite.batch=None
+        self.hpbar.batch=None
+        self.exists=False
 class Projectile():
     def __init__(self,x,y,vx,vy,game,side,rang,damage,model):
         self.x,self.y,self.vx,self.vy=x,y,vx,vy
@@ -713,11 +713,10 @@ class Turret(clone):
     def start(self):
         self.schedule_die()
     def die(self):
-        if self.exists:
-            self.game.clones[self.side].remove(self)
-            self.l2.remove(self)
-            self.exists=False
-            del self
+        self.game.clones[self.side].remove(self)
+        self.l2.remove(self)
+        self.exists=False
+        del self
     def move(self,dt):
         if self.exists:
             if self.can_shoot():
