@@ -640,10 +640,11 @@ class Turret(clone):
     def start(self):
         self.schedule_die()
     def die(self):
-        self.l[self.side].remove(self)
-        self.l2.remove(self)
-        self.exists=False
-        del self
+        if self.exists:
+            self.l[self.side].remove(self)
+            self.l2.remove(self)
+            self.exists=False
+            del self
     def take_damage(self,amount,source):
         if self.exists:
             self.hp-=amount
