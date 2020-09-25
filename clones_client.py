@@ -52,14 +52,14 @@ class particle():
         self.sprite=pyglet.sprite.Sprite(self.img,x,y,
                                          batch=game.batch,
                                          group=projectileg)
-        self.sprite.scale=SPRITE_SIZE_MULT*size/self.sprite.width
+        self.sprite.scale=size*SPRITE_SIZE_MULT/self.sprite.width
         self.existtime=0
         self.duration=duration
         game.particles.append(self)
         self.game=game
     def tick(self,dt):
         self.existtime+=dt
-        self.sprite.x,self.sprite.y=SPRITE_SIZE_MULT*(self.x-camx),SPRITE_SIZE_MULT*(self.y)
+        self.sprite.x,self.sprite.y=(self.x-camx)*SPRITE_SIZE_MULT,self.y*SPRITE_SIZE_MULT
         if self.existtime>self.duration:
             self.die()
     def die(self):
@@ -79,7 +79,7 @@ class fire(particle):
             return
         self.y+=self.vy*dt
         self.sprite.opacity=255*(1-self.existtime/self.duration)
-        self.sprite.scale+=self.growth*dt
+        self.sprite.scale+=self.growth*dt*SPRITE_SIZE_MULT
         super().tick(dt)
 def rect_intersect(ax1,ay1,ax2,ay2,bx1,by1,bx2,by2):
     return ax1<=bx2 and bx1<=ax2 and ay1<=by2 and by1<=ay2
