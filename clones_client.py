@@ -713,10 +713,11 @@ class Turret(clone):
     def start(self):
         self.schedule_die()
     def die(self):
-        self.game.clones[self.side].remove(self)
-        self.l2.remove(self)
-        self.exists=False
-        del self
+        if self.exists:
+            self.game.clones[self.side].remove(self)
+            self.l2.remove(self)
+            self.exists=False
+            del self
     def move(self,dt):
         if self.exists:
             if self.can_shoot():
