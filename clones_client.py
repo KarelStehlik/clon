@@ -509,8 +509,6 @@ class MegaMixer(clone):
                     e.x+=self.succ*dt
                 else:
                     e.x-=self.succ*dt
-                if e.y>self.y+self.height:
-                    e.y-=self.succ*dt
         AOE_square(self,self.x,self.y+self.height/2,self.width/2,self.enemies,self.dmg*dt)
     def can_shoot(self):
         return False
