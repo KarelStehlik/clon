@@ -16,6 +16,8 @@ class Game():
         self.gravity=gravity
         self.bullets=[]
         self.deadclones=[]
+        channels.cn[1].get_money(999999)
+        channels.cn[0].get_money(999999)
     def start_round(self):
         for e in self.clones[0]:
             e.start()
@@ -218,8 +220,7 @@ class Projectile():
     def move(self,dt):
         self.x+=self.vx*dt
         self.y+=self.vy*dt
-        if self.collide():
-            return
+        self.collide()
     def collide(self):
         for e in self.enemies:
             if e.exists and e.x-e.width/2<self.x<e.x+e.width/2 and e.y<self.y<e.y+e.height:
@@ -680,14 +681,14 @@ class Turret(clone):
             return True
         return False
     def aim_shoot(self):
-        d=self.rang**2
+        d=self.rang
         for e in self.enemies:
             if e.exists:
-                de=(self.x-e.x)**2+(self.y+self.height/2-e.y-e.height/2)**2
+                de=abs(self.x-e.x)
                 if de<=d:
                     d=de
                     target=e
-        if d<self.rang**2:
+        if d<self.rang:
             self.shoot([target.x-self.x,target.y+target.height/2-self.y-self.height/2])                
     def shoot(self,a):
         x=a[0]

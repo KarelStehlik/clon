@@ -263,10 +263,8 @@ class Projectile():
     def move(self,dt):
         self.x+=self.vx*dt
         self.y+=self.vy*dt
-        if self.collide():
-            return
         self.sprite.update(x=SPRITE_SIZE_MULT*(self.x-camx),y=SPRITE_SIZE_MULT*self.y)
-        #fire(self.x,self.y,50,2,self.game,vy=40,growth=0.05)
+        self.collide()
     def collide(self):
         for e in self.enemies:
             if e.exists and e.x-e.width/2<self.x<e.x+e.width/2 and e.y<self.y<e.y+e.height:
@@ -749,14 +747,14 @@ class Turret(clone):
             return True
         return False
     def aim_shoot(self):
-        d=self.rang**2
+        d=self.rang
         for e in self.enemies:
             if e.exists:
-                de=(self.x-e.x)**2+(self.y+self.height/2-e.y-e.height/2)**2
+                de=abs(self.x-e.x)
                 if de<=d:
                     d=de
                     target=e
-        if d<self.rang**2:
+        if d<self.rang:
             if target.x>self.x and self.facing==-1:
                 self.facing=1
                 self.sprite.scale_x=1
