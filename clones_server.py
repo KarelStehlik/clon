@@ -196,10 +196,13 @@ class clone():
                     ycap=max(e.y+e.h,ycap)
             self.y=max(ycap,self.y+self.vy*dt)
             if not ycap==-500:
+                self.stomp(-self.vy)
                 self.vy=0
             if self.y<=-500:
                 self.schedule_die()
                 channels.cn[1-self.side].get_money(self.cost//2+25)
+    def stomp(self,amount):
+        pass
     def die(self):
         if self.active:
             self.log.append(["die",self.exist_time+0.1])
@@ -730,6 +733,14 @@ class MegaSmash(clone):
             self.lastshot=t
             return True
         return False
+    def stomp(self,amount):
+        if amount>100:
+            AOE_square(self,self.x,self.y-self.width/3,self.width*2/3,self.enemies,
+                       amount,
+                       knockback_y=amount/2)
+            if self.active:
+                channels.send_both({"action":"stomp",
+                                    "amount":amount,"side":self.side})
 #################################################################################3
 possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,Engi,
                 Tank,MegaSmash,MegaMixer]

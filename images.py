@@ -19,6 +19,8 @@ ShieldR=pyglet.resource.image("imagefolder/BShield.png").get_transform(flip_x=Tr
 sprayerR=pyglet.resource.image("imagefolder/BSprayer.png")
 sprayerG=pyglet.resource.image("imagefolder/GSprayer.png")
 
+earthquack=pyglet.resource.image("imagefolder/earthquack.png")
+earthquack.anchor_x=earthquack.width//2
 SmashR=pyglet.resource.image("imagefolder/BSmash.png")
 SmashG=pyglet.resource.image("imagefolder/GSmash.png")
 SmashRL=pyglet.resource.image("imagefolder/BSmashL.png")

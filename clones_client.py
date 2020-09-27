@@ -85,6 +85,21 @@ class fire(particle):
         self.sprite.opacity=255*(1-self.existtime/self.duration)
         self.sprite.scale+=self.growth*dt*SPRITE_SIZE_MULT
         super().tick(dt)
+class earth(particle):
+    img=images.earthquack
+    def __init__(self,x,y,size,duration,game,vy=0,growth=0.003):
+        super().__init__(x,y,size,duration,game)
+        self.vy=vy
+        self.growth=growth
+        self.sprite.scale_y=0
+    def tick(self,dt):
+        if self.existtime>self.duration:
+            super().die()
+            return
+        self.y+=self.vy*dt
+        self.sprite.opacity=255*(1-(self.existtime/self.duration)**2)
+        self.sprite.scale_y+=self.growth*dt*SPRITE_SIZE_MULT
+        super().tick(dt)
 def rect_intersect(ax1,ay1,ax2,ay2,bx1,by1,bx2,by2):
     return ax1<=bx2 and bx1<=ax2 and ay1<=by2 and by1<=ay2
 def take_second(l):
@@ -129,7 +144,7 @@ class clone():
         self.additional_images.append([pyglet.sprite.Sprite(arro,
                                         x=self.x*SPRITE_SIZE_MULT,
                                         y=(self.y+self.height+10)*SPRITE_SIZE_MULT,
-                                        group=dudeg,batch=self.game.batch),
+                                        group=projectileg,batch=self.game.batch),
                                        0,self.height+10])
     def start(self):
         if self.side==0:
@@ -197,6 +212,12 @@ class clone():
             self.vx+=x
             self.vy+=y
             self.move_locked=True
+    def distance_from_ground(self):
+        d=10000
+        for e in self.game.mapp.platforms:
+            if e.x<self.x<e.x+e.w and e.y+e.h<=self.y:
+                d=min(self.y-e.y-e.h,d)
+        return d
     def move(self,dt):
         if self.exists:
             if self.move_locked and self.on_ground():
@@ -233,10 +254,13 @@ class clone():
                         ycap=max(e.y+e.h,ycap)
                 self.y=max(ycap,self.y+self.vy*dt)
                 if not ycap==-500:
+                    self.stomp(-self.vy)
                     self.vy=0
                 if self.y<=-500:
                     self.schedule_die()
             self.update_pos(self.x,self.y)
+    def stomp(self,amount):
+        pass
     def die(self):
         if self.active:
             self.active=False
@@ -848,6 +872,13 @@ class MegaSmash(clone):
         self.smashing="none"
         self.smashing_time=0
         super().die()
+    def stomp(self,amount):
+        if amount>100:
+            earth(self.x,self.y-self.distance_from_ground(),
+                  self.width*2/3,0.5,self.game,growth=amount/200)
+            AOE_square(self,self.x,self.y-self.width/3,self.width*2/3,self.enemies,
+                       amount,
+                       knockback_y=amount/2)
 #######################################################################
 possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,Engi,
                 Tank,MegaSmash,MegaMixer]

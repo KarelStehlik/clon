@@ -45,6 +45,8 @@ class MyNetworkListener(ConnectionListener):
     def Network_shoot(self,data):
         #print(data["action"])
         place.main.game.current_clones[data["side"]].shoot(data["a"],0)
+    def Network_stomp(self,data):
+        place.main.game.current_clones[data["side"]].stomp(data["amount"])
     def Network_update(self,data):
         #print(data["action"])
         place.main.game.current_clones[0].update_health(data["hp0"])
