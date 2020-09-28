@@ -66,8 +66,10 @@ class mode_main(mode):
             ypos+=h
             h*=-1
         self.platforms.append([w,h,xpos,ypos])
-        self.active.scale_x=(x-self.x)/images.platform.width
-        self.active.scale_y=(y-self.y)/images.platform.height
+        self.active.scale_x=(w)/images.platform.width
+        self.active.scale_y=(h)/images.platform.height
+        self.active.x=xpos-self.camx
+        self.active.y=ypos
         self.platform_imgs.append(self.active)
         self.dragging=False
     def mouse_drag(self,x, y, dx, dy, button, modifiers):
