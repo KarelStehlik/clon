@@ -159,6 +159,7 @@ class clone():
         self.exists=True
         self.log_completed=0
         self.exist_time=0
+        self.vx=self.vy=0
     def schedule_die(self):
         if self.exists:
             self.exists=False

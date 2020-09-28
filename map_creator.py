@@ -31,26 +31,69 @@ class mode():
 class mode_main(mode):
     def __init__(self,win,batch):
         super().__init__(win,batch)
+        self.cx=pyglet.text.Label(x=5,y=30,text="aaa",color=(255,255,255,255),
+                                        group=pyglet.graphics.OrderedGroup(4),batch=batch)
         self.x=0
         self.y=0
         self.platforms=[]
         self.platform_imgs=[]
         with open("mapdata.txt", "r") as m:
             self.mapdata=[[g.split(",") for g in e.split("\n")] for e in m.read().split("/")]
-        print(self.mapdata[0])
+        self.camx=0
+        self.dragging=False
+    def export(self):
+        w="/".join(["\n".join([",".join(k) for k in e]) for e in self.mapdata])
+        print(w)
     def mouse_press(self,x,y,button,modifiers):
+        if self.dragging:
+            self.mouse_release(self.x-camx,self.y,button,modifiers)
+        x+=self.camx
         self.x=x
         self.y=y
-        self.active=pyglet.sprite.Sprite(images.platform,self.x,self.y,batch=self.batch)
+        self.active=pyglet.sprite.Sprite(images.platform,self.x-self.camx,self.y,batch=self.batch)
         self.active.scale_x=self.active.scale_y=0
+        self.dragging=True
+    def out_map(self):
+        w="/"+"\n".join([",".join([str(x) for x in k]) for k in self.platforms])
+        print(w)
     def mouse_release(self,x,y,button,modifiers):
-        self.platforms.append([self.x,self.y,x,y])
+        x+=self.camx
+        w,h,xpos,ypos=x-self.x,y-self.y,self.x,self.y
+        if w<0:
+            xpos+=w
+            w*=-1
+        if h<0:
+            ypos+=h
+            h*=-1
+        self.platforms.append([w,h,xpos,ypos])
         self.active.scale_x=(x-self.x)/images.platform.width
         self.active.scale_y=(y-self.y)/images.platform.height
         self.platform_imgs.append(self.active)
+        self.dragging=False
     def mouse_drag(self,x, y, dx, dy, button, modifiers):
+        if not self.dragging:
+            self.mouse_press(x-dx,y-dy,button,modifiers)
+        x+=self.camx
         self.active.scale_x=(x-self.x)/images.platform.width
         self.active.scale_y=(y-self.y)/images.platform.height
+    def update_imgs(self):
+        for i in range(len(self.platforms)):
+                self.platform_imgs[i].x=self.platforms[i][2]-self.camx
+        if self.dragging:
+            self.active.x=self.x-self.camx
+        self.cx.text=str(self.camx)
+    def key_press(self,symbol,modifiers):
+        if symbol==key.E:
+            self.out_map()
+        elif symbol==key.D:
+            self.camx+=500
+            self.update_imgs()
+        elif symbol==key.A:
+            self.camx-=500
+            self.update_imgs()
+        elif symbol==key.Z and modifiers and key.MOD_CTRL:
+            self.platforms.pop(-1)
+            self.platform_imgs.pop(-1).delete()
 
 class windoo(pyglet.window.Window):
     def start(self):
@@ -100,4 +143,9 @@ place = windoo(resizable=True,caption='test',fullscreen=True)
 place.start()
 pyglet.clock.schedule_interval(place.tick,1.0/60)
 while True:
-    pyglet.clock.tick()
+    try:
+        pyglet.clock.tick()
+    except Exception as e:
+        place.close()
+        place.flip()
+        raise e
