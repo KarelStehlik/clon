@@ -8,6 +8,20 @@ from constants import *
 import serverchannels as channels
 dudeg=pyglet.graphics.OrderedGroup(2)
 ID=0
+clone_stats={}
+def load_stats():
+    global clone_stats
+    with open("clone_stats.txt","r") as cs:
+        clones=cs.read().split("\n")
+        for clone in clones:
+            name_stats=clone.split(":")
+            stats={}
+            for e in name_stats[1].split(","):
+                k=e.split("=")
+                stats[k[0]]=float(k[1])
+            clone_stats[name_stats[0]]=stats
+load_stats()
+
 class Game():
     def __init__(self,mapp,gravity):
         self.clones=[[],[]]
@@ -253,6 +267,7 @@ class BasicGuyBullet(Projectile):
         self.die(0)
 class BasicGuy(clone):
     cost=0
+    name="BasicGuy"
     def __init__(self,game,side):
         super().__init__(game,hp=50,height=70,
                          width=30,spd=200,jump=600,side=side)
@@ -287,6 +302,7 @@ class BasicGuy(clone):
         return False
 ###########################################################################################################
 class Mixer(clone):
+    name="Mixer"
     cost=0
     def __init__(self,game,side):
         super().__init__(game,hp=100,height=60,
@@ -304,6 +320,7 @@ class Mixer(clone):
             self.shoot([],dt)
 #########################################################################################################
 class Bazooka(clone):
+    name="Bazooka"
     cost=500
     def __init__(self,game,side):
         super().__init__(game,hp=150,height=65,
@@ -348,6 +365,7 @@ class BazookaBullet(Projectile):
         self.die(0)
 ##################################################################################################################
 class Tele(clone):
+    name="Tele"
     cost=250
     def __init__(self,game,side):
         super().__init__(game,hp=50,height=80,
@@ -386,6 +404,7 @@ class Tele(clone):
         super().die()
 #####################################################################
 class Shield(clone):
+    name="Shield"
     cost=400
     def __init__(self,game,side):
         super().__init__(game,hp=800,height=110,
@@ -426,6 +445,7 @@ class Shield(clone):
             super().take_damage(amount,source)
 ##########################################################################################################################################
 class Sprayer(clone):
+    name="Sprayer"
     cost=500
     def __init__(self,game,side):
         super().__init__(game,hp=50,height=70,
@@ -469,6 +489,7 @@ class Sprayer(clone):
         return False
 ###########################################################
 class MegaMixer(clone):
+    name="MegaMixer"
     cost=100000
     def __init__(self,game,side):
         super().__init__(game,hp=50000,height=300,
@@ -492,6 +513,7 @@ class MegaMixer(clone):
             self.shoot([],dt)
 ################################################################
 class Smash(clone):
+    name="Smash"
     cost=2000
     def __init__(self,game,side):
         super().__init__(game,hp=2000,height=120,
@@ -521,6 +543,7 @@ class Smash(clone):
         return False
 ############################################################################3
 class MachineGun(clone):
+    name="MachineGun"
     cost=1000
     def __init__(self,game,side):
         super().__init__(game,hp=200,height=70,
@@ -556,6 +579,7 @@ class MachineGun(clone):
         return False
 #################################################################################
 class Tank(clone):
+    name="Tank"
     cost=5000
     def __init__(self,game,side):
         super().__init__(game,hp=5000,height=80,
@@ -606,6 +630,7 @@ class Tank(clone):
         super().knockback(a/4,b/3)
 ################################################################################
 class Engi(clone):
+    name="Engi"
     cost=5000
     def __init__(self,game,side):
         super().__init__(game,hp=50,height=70,
@@ -627,6 +652,7 @@ class Engi(clone):
             return True
         return False
 class Turret(clone):
+    name="Turret"
     def __init__(self,game,side,l2,x,y):
         super().__init__(game,hp=50,height=60,
                          width=30,spd=200,jump=600,side=side)
@@ -707,6 +733,7 @@ class Turret(clone):
                          self.rang,self.dmg,self.game)
 ############################################################################
 class MegaSmash(clone):
+    name="MegaSmash"
     cost=20000
     def __init__(self,game,side):
         super().__init__(game,hp=10000,height=300,
