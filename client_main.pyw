@@ -120,7 +120,7 @@ class mode_choosing(mode):
             self.cframes.append(a)
             self.imgs.append(b)
             c=pyglet.text.Label(x=int(i*w+w/2+30*SPRITE_SIZE_MULT),
-                                y=490*SPRITE_SIZE_MULT,text=str(e.cost),color=(255,255,0,255),
+                                y=490*SPRITE_SIZE_MULT,text=str(int(e.cost)),color=(255,255,0,255),
                                 batch=self.batch,group=self.ccgroup3,font_size=int(40*SPRITE_SIZE_MULT),
                                 anchor_x="center")
             self.imgs.append(c)
@@ -233,7 +233,7 @@ class windoo(pyglet.window.Window):
         self.money=self.sec=self.frames=0
         self.fpscount=pyglet.text.Label(x=5,y=5,text="aaa",color=(255,255,255,255),
                                         group=pyglet.graphics.OrderedGroup(4),batch=self.mainBatch)
-        self.money_label=pyglet.text.Label(x=SCREEN_WIDTH-20,y=SCREEN_HEIGHT,text=str(self.money),
+        self.money_label=pyglet.text.Label(x=SCREEN_WIDTH-20,y=SCREEN_HEIGHT,text=str(int(self.money)),
                                            color=(255,255,0,255),group=pyglet.graphics.OrderedGroup(4),
                                            anchor_x="right",anchor_y="top",batch=self.mainBatch,
                                            font_size=int(40*SPRITE_SIZE_MULT))
@@ -275,7 +275,7 @@ class windoo(pyglet.window.Window):
     def check(self,dt):
         self.sec+=dt
         self.frames+=1
-        self.money_label.text=str(self.money)
+        self.money_label.text=str(int(self.money))
         if self.sec>1:
             self.sec-=1
             self.fpscount.text=str(self.frames)

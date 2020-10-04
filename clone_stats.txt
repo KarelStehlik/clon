@@ -10,4 +10,4 @@ MachineGun:cost=1000,hp=200,height=70,width=30,spd=140,jump=500,dmg=2,aspd=0,bsp
 Tank:cost=5000,hp=5000,height=80,width=150,spd=100,jump=0,dmg=500,aspd=3,bspd=1000,rang=1000,eradius=80,dmg2=100
 Engi:cost=5000,hp=50,height=70,width=30,spd=200,jump=600,aspd=1
 Turret:cost=0,hp=50,height=60,width=30,spd=200,jump=600,aspd=0.1,bspd=500,rang=500,dmg=10
-MegaSmash:cost=20000,hp=10000,height=300,width=200,spd=150,jump=110,dmg=1500,aspd=1,radius=100
+MegaSmash:cost=20000,hp=10000,height=300,width=200,spd=150,jump=1100,dmg=1500,aspd=1,radius=100
