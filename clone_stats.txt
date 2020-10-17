@@ -7,7 +7,7 @@ Sprayer:cost=500,hp=50,height=70,width=30,spd=200,jump=600,dmg=20,aspd=10,bspd=4
 MegaMixer:cost=100000,hp=50000,height=300,width=200,spd=300,jump=700,dmg=10000,succ=100
 Smash:cost=2000,hp=2000,height=120,width=80,spd=150,jump=600,dmg=300,aspd=1,radius=20
 MachineGun:cost=1000,hp=200,height=70,width=30,spd=140,jump=500,dmg=2,aspd=0,bspd=800,rang=550
-Tank:cost=5000,hp=5000,height=80,width=150,spd=100,jump=0,dmg=500,aspd=3,bspd=1000,rang=1000,eradius=80,dmg2=100
-Engi:cost=5000,hp=50,height=70,width=30,spd=200,jump=600,aspd=1
-Turret:cost=0,hp=50,height=60,width=30,spd=200,jump=600,aspd=0.1,bspd=500,rang=500,dmg=10
+Tank:cost=5000,hp=5000,height=80,width=150,spd=100,jump=0,dmg=500,aspd=0,bspd=1000,rang=1000,eradius=80,dmg2=100
+Engi:cost=5000,hp=50,height=70,width=30,spd=200,jump=600,aspd=1,radius=50,dmg=20
+Turret:cost=0,hp=300,height=60,width=30,spd=200,jump=600,aspd=2,bspd=700,rang=2000,dmg=700,eradius=200
 MegaSmash:cost=20000,hp=10000,height=300,width=200,spd=150,jump=1100,dmg=1500,aspd=1,radius=100

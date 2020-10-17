@@ -396,7 +396,7 @@ class Bazooka(clone):
         self.bspd=self.stats["bspd"]
         self.rang=self.stats["rang"]
         self.lastshot=0
-        self.eradius=150
+        self.eradius=self.stats["eradius"]
     def shoot(self,a,dt):
         x=a[0]
         y=a[1]
@@ -720,16 +720,63 @@ class Engi(clone):
         self.lastshot=0
         self.turrets=[]
         self.aspd=self.stats["aspd"]
-    def shoot(self,a,dt):
+        self.radius=self.stats["radius"]
+        self.damage=self.stats["dmg"]
+        self.turret_spawned=False
+        self.shoot,self.can_shoot=self.shoot1,self.can_shoot1
+        self.enemies=game.clones[1-side]
+    def shoot1(self,a,dt):
+        self.turret_spawned=True
         Turret(self.game,self.side,self.turrets,self.x,self.y)
-    def can_shoot(self):
+        self.shoot,self.can_shoot=self.shoot2,self.can_shoot2
+    def can_shoot1(self):
         if not self.exists:
             return False
         t=self.exist_time
-        if t-self.lastshot>self.aspd and len(self.turrets)<=5:
+        if t-self.lastshot>self.aspd and not self.turret_spawned:
             self.lastshot=t
             return True
         return False
+
+    def shoot2(self,a,dt):
+        AOE_square(self,self.x,self.y+self.width//2,self.radius,self.enemies,self.damage)
+    def can_shoot2(self):
+        if not self.exists:
+            return False
+        t=self.exist_time
+        if t-self.lastshot>self.aspd:
+            self.lastshot=t
+            return True
+        return False
+
+    def start(self):
+        super().start()
+        self.shoot,self.can_shoot=self.shoot1,self.can_shoot1
+        self.turret_spawned=False
+
+class Grenade(Projectile):
+    def __init__(self,x,y,vx,vy,game,side,rang,damage,radius):
+        super().__init__(x,y,vx,vy,game,side,rang,damage,images.BazookaBullet)
+        self.radius=radius
+        if vx==0:
+            if vy<0:
+                self.sprite.rotation=-90
+            else:
+                self.sprite.rotation==90
+        elif vx>0:
+            self.sprite.rotation=-math.atan(vy/vx)*180/math.pi
+        else:
+            self.sprite.rotation=180-math.atan(vy/vx)*180/math.pi
+    def on_collision(self,e):
+        AOE_square(self,self.x,self.y,self.radius,self.enemies,self.damage)
+        fire(self.x,self.y,0,0.5,self.game,growth=self.radius/150)
+        pyglet.clock.unschedule(self.die)
+        self.die(0)
+    def move(self,dt):
+        self.vy-=self.game.gravity*dt
+        super().move(dt)
+        
+
 class Turret(clone):
     name="Turret"
     imageG=images.turretG
@@ -743,6 +790,7 @@ class Turret(clone):
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
         self.rang=self.stats["rang"]
+        self.eradius=self.stats["eradius"]
         self.update_pos(x,y)
         self.exists=True
         self.active=False
@@ -796,14 +844,15 @@ class Turret(clone):
                 if de<=d:
                     d=de
                     target=e
-        if d<self.rang:
+        if d<self.bspd:
             if target.x>self.x and self.facing==-1:
                 self.facing=1
                 self.sprite.scale_x=1
             elif target.x<self.x and self.facing==1:
                 self.facing=-1
                 self.sprite.scale_x=-1
-            self.shoot([target.x-self.x,target.y+target.height/2-self.y-self.height/2])
+            self.shoot([target.x-self.x,target.y+
+                        target.height/2-self.y-self.height/2+100])
     def shoot(self,a):
         x=a[0]
         y=a[1]
@@ -815,8 +864,8 @@ class Turret(clone):
             if x<0:
                 vx*=-1
             vy=vx*y/x
-        a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.game,self.side,
-                         self.rang,self.dmg)
+        a=Grenade(self.x,self.y+self.height/2,vx,vy,self.game,self.side,
+                         self.rang,self.dmg,self.eradius)
 ############################################################################
 class MegaSmash(clone):
     name="MegaSmash"
@@ -874,8 +923,9 @@ class MegaSmash(clone):
         return False
     def move(self,dt):
         if self.exists:
-            fire(self.x-70,self.y+220,60,0.5,self.game,vy=150,growth=-0.10)
-            fire(self.x+70,self.y+220,60,0.5,self.game,vy=150,growth=-0.10)
+            if dt<1/55:
+                fire(self.x-70,self.y+220,60,0.5,self.game,vy=150,growth=-0.10)
+                fire(self.x+70,self.y+220,60,0.5,self.game,vy=150,growth=-0.10)
             if self.smashing_time>0:
                 self.smashing_time-=min(dt,self.smashing_time)
                 if self.smashing_time==0:

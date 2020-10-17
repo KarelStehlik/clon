@@ -239,6 +239,7 @@ class Projectile():
         self.speed=math.sqrt(self.vx**2+self.vy**2)
         pyglet.clock.schedule_once(self.die,self.rang/self.speed)
         self.damage=damage
+        self.game=game
     def move(self,dt):
         self.x+=self.vx*dt
         self.y+=self.vy*dt
@@ -631,19 +632,58 @@ class Engi(clone):
         self.lastshot=0
         self.turrets=[]
         self.aspd=self.stats["aspd"]
-    def shoot(self,a,dt):
+        self.radius=self.stats["radius"]
+        self.damage=self.stats["dmg"]
+        self.turret_spawned=False
+        self.enemies=self.l[1-side]
+        self.shoot,self.can_shoot=self.shoot1,self.can_shoot1
+    def shoot1(self,a,dt):
+        self.turret_spawned=True
         Turret(self.game,self.side,self.turrets,self.x,self.y)
+        self.shoot,self.can_shoot=self.shoot2,self.can_shoot2
         if self.active:
             channels.send_both({"action":"shoot","a":a,"side":self.side})
             self.log.append(["shoot",self.exist_time,a])
-    def can_shoot(self):
+    def can_shoot1(self):
         if not self.exists:
             return False
         t=self.exist_time
-        if t-self.lastshot>self.aspd and len(self.turrets)<=5:
+        if t-self.lastshot>self.aspd and not self.turret_spawned:
             self.lastshot=t
             return True
         return False
+
+    def shoot2(self,a,dt):
+        AOE_square(self,self.x,self.y+self.width//2,self.radius,self.enemies,self.damage)
+        if self.active:
+            channels.send_both({"action":"shoot","a":a,"side":self.side})
+            self.log.append(["shoot",self.exist_time,a])
+    def can_shoot2(self):
+        if not self.exists:
+            return False
+        t=self.exist_time
+        if t-self.lastshot>self.aspd:
+            self.lastshot=t
+            return True
+        return False
+
+    def start(self):
+        super().start()
+        self.turret_spawned=False
+        self.shoot,self.can_shoot=self.shoot1,self.can_shoot1
+
+class Grenade(Projectile):
+    def __init__(self,x,y,vx,vy,enemies,rang,damage,game,radius):
+        super().__init__(x,y,vx,vy,enemies,rang,damage,game)
+        self.radius=radius
+    def on_collision(self,e):
+        AOE_square(self,self.x,self.y,self.radius,self.enemies,self.damage)
+        pyglet.clock.unschedule(self.die)
+        self.die(0)
+    def move(self,dt):
+        self.vy-=self.game.gravity*dt
+        super().move(dt)
+
 class Turret(clone):
     name="Turret"
     def __init__(self,game,side,l2,x,y):
@@ -655,6 +695,7 @@ class Turret(clone):
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
         self.rang=self.stats["rang"]
+        self.eradius=self.stats["eradius"]
         self.x,self.y=x,y
         self.exists=True
         self.enemies=self.l[1-self.side]
@@ -710,8 +751,9 @@ class Turret(clone):
                 if de<=d:
                     d=de
                     target=e
-        if d<self.rang:
-            self.shoot([target.x-self.x,target.y+target.height/2-self.y-self.height/2])                
+        if d<self.bspd:
+            self.shoot([target.x-self.x,target.y+
+                        target.height/2-self.y-self.height/2+100])                
     def shoot(self,a):
         x=a[0]
         y=a[1]
@@ -723,8 +765,8 @@ class Turret(clone):
             if x<0:
                 vx*=-1
             vy=vx*y/x
-        a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
-                         self.rang,self.dmg,self.game)
+        a=Grenade(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
+                         self.rang,self.dmg,self.game,self.eradius)
 ############################################################################
 class MegaSmash(clone):
     name="MegaSmash"
