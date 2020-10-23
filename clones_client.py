@@ -773,11 +773,10 @@ class Grenade(Projectile):
             self.sprite.rotation=-math.atan(vy/vx)*180/math.pi
         else:
             self.sprite.rotation=180-math.atan(vy/vx)*180/math.pi
-    def on_collision(self,e=None):
+    def explode(self,e=None):
         AOE_square(self,self.x,self.y,self.radius,self.enemies,self.damage)
         fire(self.x,self.y,0,0.5,self.game,growth=self.radius/150)
-        pyglet.clock.unschedule(self.die)
-        self.die(0)
+        super().die(0)
     def move(self,dt):
         self.x+=self.vx*dt
         ycap=-500
@@ -790,13 +789,18 @@ class Grenade(Projectile):
                 ycap=max(e.y+e.h,ycap)
         if not ycap==-500:
             self.y=2*ycap-self.vy*dt-self.y
-            self.vy*=-0.6
-            self.vx*=0.8
+            self.vy*=-0.7
+            self.vx*=0.9
         else:
             self.y=self.y+self.vy*dt
             self.vy-=self.game.gravity*dt
         self.sprite.update(x=SPRITE_SIZE_MULT*(self.x-camx),y=SPRITE_SIZE_MULT*self.y)
         self.collide()
+    def on_collision(self,e):
+        pyglet.clock.unschedule(self.die)
+        self.explode()
+    def die(self,dt):
+        self.explode()
         
 
 class Turret(clone):
