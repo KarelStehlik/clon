@@ -21,6 +21,10 @@ def load_stats():
                 stats[k[0]]=float(k[1])
             clone_stats[name_stats[0]]=stats
 load_stats()
+
+def get_cost(c):
+    return c.cost
+
 if __name__=="__main__":
     print(clone_stats)
 
@@ -493,11 +497,12 @@ class MegaMixer(clone):
     def __init__(self,game,side):
         super().__init__(game,side=side)
         self.dmg=self.stats["dmg"]
+        self.rang=self.stats["rang"]
         self.enemies=game.clones[1-self.side]
         self.succ=self.stats["succ"]
     def shoot(self,a,dt):
         for e in self.enemies:
-            if e.exists:
+            if e.exists and abs(e.x-self.x)<self.rang:
                 if e.x<self.x:
                     e.x+=self.succ*dt
                 else:
@@ -517,6 +522,8 @@ class Smash(clone):
         super().__init__(game,side=side)
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
+        self.knockback_x=self.stats["kbx"]
+        self.knockback_y=self.stats["kby"]
         self.lastshot=0
         self.enemies=self.l[1-side]
         self.radius=self.stats["radius"]
@@ -526,10 +533,10 @@ class Smash(clone):
             self.log.append(["shoot",self.exist_time,a])
         if a[0]<=0:
             AOE_square(self,self.x-50,self.y+self.height/2,self.radius,self.enemies,self.dmg,
-                       knockback_x=-500,knockback_y=1000)
+                       knockback_x=-self.knockback_x,knockback_y=self.knockback_y)
         else:
             AOE_square(self,self.x+50,self.y+self.height/2,self.radius,self.enemies,self.dmg,
-                       knockback_x=500,knockback_y=1000)
+                       knockback_x=self.knockback_x,knockback_y=self.knockback_y)
     def can_shoot(self):
         if not self.exists:
             return False
@@ -676,13 +683,28 @@ class Grenade(Projectile):
     def __init__(self,x,y,vx,vy,enemies,rang,damage,game,radius):
         super().__init__(x,y,vx,vy,enemies,rang,damage,game)
         self.radius=radius
-    def on_collision(self,e):
+    def on_collision(self,e=None):
         AOE_square(self,self.x,self.y,self.radius,self.enemies,self.damage)
         pyglet.clock.unschedule(self.die)
         self.die(0)
     def move(self,dt):
-        self.vy-=self.game.gravity*dt
-        super().move(dt)
+        self.x+=self.vx*dt
+        ycap=-500
+        for e in self.game.mapp.platforms:
+            if self.y>e.y and self.vy<0 and rect_intersect(self.x,
+                                                           self.y+self.vy*dt,
+                                                           self.x,
+                                                           self.y,
+                                                           e.x,e.y+e.h,e.x+e.w,e.y+e.h):
+                ycap=max(e.y+e.h,ycap)
+        if not ycap==-500:
+            self.y=2*ycap-self.vy*dt-self.y
+            self.vy*=-0.6
+            self.vx*=0.8
+        else:
+            self.y=self.y+self.vy*dt
+            self.vy-=self.game.gravity*dt
+        self.collide()
 
 class Turret(clone):
     name="Turret"
@@ -696,6 +718,7 @@ class Turret(clone):
         self.bspd=self.stats["bspd"]
         self.rang=self.stats["rang"]
         self.eradius=self.stats["eradius"]
+        self.detect=self.stats["detect"]
         self.x,self.y=x,y
         self.exists=True
         self.enemies=self.l[1-self.side]
@@ -751,7 +774,7 @@ class Turret(clone):
                 if de<=d:
                     d=de
                     target=e
-        if d<self.bspd:
+        if d<self.detect:
             self.shoot([target.x-self.x,target.y+
                         target.height/2-self.y-self.height/2+100])                
     def shoot(self,a):
@@ -775,6 +798,8 @@ class MegaSmash(clone):
         super().__init__(game,side=side)
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
+        self.knockback_x=self.stats["kbx"]
+        self.knockback_y=self.stats["kby"]
         self.lastshot=0
         self.enemies=self.l[1-side]
         self.radius=self.stats["radius"]
@@ -784,10 +809,10 @@ class MegaSmash(clone):
             self.log.append(["shoot",self.exist_time,a])
         if a[0]<=0:
             AOE_square(self,self.x-80,self.y+self.height/3,self.radius,self.enemies,self.dmg,
-                       knockback_x=-2500,knockback_y=1000)
+                       knockback_x=-self.knockback_x,knockback_y=self.knockback_y)
         else:
             AOE_square(self,self.x+80,self.y+self.height/3,self.radius,self.enemies,self.dmg,
-                       knockback_x=2500,knockback_y=1000)
+                       knockback_x=self.knockback_x,knockback_y=self.knockback_y)
     def can_shoot(self):
         if not self.exists:
             return False
@@ -807,3 +832,5 @@ class MegaSmash(clone):
 #################################################################################3
 possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,Engi,
                 Tank,MegaSmash,MegaMixer]
+
+possible_units.sort(key=get_cost)

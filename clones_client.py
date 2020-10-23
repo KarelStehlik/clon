@@ -21,7 +21,10 @@ def load_stats():
                 stats[k[0]]=float(k[1])
             clone_stats[name_stats[0]]=stats
 load_stats()
-            
+
+def get_cost(c):
+    return c.cost
+
 class Game():
     def __init__(self,mapp,batch,connection,gravity,side=0):
         self.clones=[[],[]]
@@ -542,11 +545,12 @@ class MegaMixer(clone):
     def __init__(self,game,side):
         super().__init__(game,side=side)
         self.dmg=self.stats["dmg"]
+        self.rang=self.stats["rang"]
         self.enemies=game.clones[1-self.side]
         self.succ=self.stats["succ"]
     def shoot(self,a,dt):
         for e in self.enemies:
-            if e.exists:
+            if e.exists and abs(e.x-self.x)<self.rang:
                 if e.x<self.x:
                     e.x+=self.succ*dt
                 else:
@@ -572,6 +576,8 @@ class Smash(clone):
         self.enemies=game.clones[1-side]
         self.smashing="none"
         self.smashing_time=0
+        self.knockback_x=self.stats["kbx"]
+        self.knockback_y=self.stats["kby"]
         self.radius=self.stats["radius"]
         if side==0:
             self.spryte=pyglet.sprite.Sprite(self.imageG,10,100,batch=None,group=dudeg)
@@ -584,7 +590,7 @@ class Smash(clone):
     def shoot(self,a,dt):
         if a[0]<=0:
             AOE_square(self,self.x-50,self.y+self.height/2,self.radius,self.enemies,self.dmg,
-                       knockback_x=-500,knockback_y=1000)
+                       knockback_x=-self.knockback_x,knockback_y=self.knockback_y)
             self.smashing="left"
             self.sprite.batch=None
             if self.facing==1:
@@ -596,7 +602,7 @@ class Smash(clone):
             self.sprite.scale_x=self.facing
         else:
             AOE_square(self,self.x+50,self.y+self.height/2,self.radius,self.enemies,self.dmg,
-                       knockback_x=500,knockback_y=1000)
+                       knockback_x=self.knockback_x,knockback_y=self.knockback_y)
             self.smashing="right"
             self.sprite.batch=None
             if self.facing==1:
@@ -767,14 +773,30 @@ class Grenade(Projectile):
             self.sprite.rotation=-math.atan(vy/vx)*180/math.pi
         else:
             self.sprite.rotation=180-math.atan(vy/vx)*180/math.pi
-    def on_collision(self,e):
+    def on_collision(self,e=None):
         AOE_square(self,self.x,self.y,self.radius,self.enemies,self.damage)
         fire(self.x,self.y,0,0.5,self.game,growth=self.radius/150)
         pyglet.clock.unschedule(self.die)
         self.die(0)
     def move(self,dt):
-        self.vy-=self.game.gravity*dt
-        super().move(dt)
+        self.x+=self.vx*dt
+        ycap=-500
+        for e in self.game.mapp.platforms:
+            if self.y>e.y and self.vy<0 and rect_intersect(self.x,
+                                                           self.y+self.vy*dt,
+                                                           self.x,
+                                                           self.y,
+                                                           e.x,e.y+e.h,e.x+e.w,e.y+e.h):
+                ycap=max(e.y+e.h,ycap)
+        if not ycap==-500:
+            self.y=2*ycap-self.vy*dt-self.y
+            self.vy*=-0.6
+            self.vx*=0.8
+        else:
+            self.y=self.y+self.vy*dt
+            self.vy-=self.game.gravity*dt
+        self.sprite.update(x=SPRITE_SIZE_MULT*(self.x-camx),y=SPRITE_SIZE_MULT*self.y)
+        self.collide()
         
 
 class Turret(clone):
@@ -791,6 +813,7 @@ class Turret(clone):
         self.bspd=self.stats["bspd"]
         self.rang=self.stats["rang"]
         self.eradius=self.stats["eradius"]
+        self.detect=self.stats["detect"]
         self.update_pos(x,y)
         self.exists=True
         self.active=False
@@ -844,7 +867,7 @@ class Turret(clone):
                 if de<=d:
                     d=de
                     target=e
-        if d<self.bspd:
+        if d<self.detect:
             if target.x>self.x and self.facing==-1:
                 self.facing=1
                 self.sprite.scale_x=1
@@ -876,6 +899,8 @@ class MegaSmash(clone):
         super().__init__(game,side=side)
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
+        self.knockback_x=self.stats["kbx"]
+        self.knockback_y=self.stats["kby"]
         self.lastshot=0
         self.enemies=game.clones[1-side]
         self.smashing="none"
@@ -892,7 +917,7 @@ class MegaSmash(clone):
     def shoot(self,a,dt):
         if a[0]<=0:
             AOE_square(self,self.x-80,self.y+self.height/3,self.radius,self.enemies,self.dmg,
-                       knockback_x=-2500,knockback_y=1000)
+                       knockback_x=-self.knockback_x,knockback_y=self.knockback_y)
             self.smashing="left"
             self.sprite.batch=None
             if self.facing==1:
@@ -904,7 +929,7 @@ class MegaSmash(clone):
             self.sprite.scale_x=self.facing
         else:
             AOE_square(self,self.x+80,self.y+self.height/3,self.radius,self.enemies,self.dmg,
-                       knockback_x=2500,knockback_y=1000)
+                       knockback_x=self.knockback_x,knockback_y=self.knockback_y)
             self.smashing="right"
             self.sprite.batch=None
             if self.facing==1:
@@ -924,8 +949,8 @@ class MegaSmash(clone):
     def move(self,dt):
         if self.exists:
             if dt<1/55:
-                fire(self.x-70,self.y+220,60,0.5,self.game,vy=150,growth=-0.10)
-                fire(self.x+70,self.y+220,60,0.5,self.game,vy=150,growth=-0.10)
+                fire(self.x-self.width/3,self.y+self.height*2.2/3,30,0.3,self.game,vy=200,growth=-0.10)
+                fire(self.x+self.width/3,self.y+self.height*2.2/3,30,0.3,self.game,vy=200,growth=-0.10)
             if self.smashing_time>0:
                 self.smashing_time-=min(dt,self.smashing_time)
                 if self.smashing_time==0:
@@ -952,3 +977,4 @@ class MegaSmash(clone):
 #######################################################################
 possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,Engi,
                 Tank,MegaSmash,MegaMixer]
+possible_units.sort(key=get_cost)

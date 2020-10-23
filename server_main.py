@@ -48,6 +48,10 @@ class cw_server(Server):
 
 srvr=cw_server(localaddr=("192.168.1.132",5071))
 
+class mode_building():
+    def __init__(self,**kw):
+        pass
+
 class mapp():
     def __init__(self,mapp):
         self.platforms=mapp
@@ -59,7 +63,6 @@ class mode_testing():
             self.mapp=random.choice(maps.maps)
         self.mapp=mapp(self.mapp)
         self.gravity=1000
-        self.current_clones=[None,None]
         self.running=False
         self.game=clones.Game(self.mapp,self.gravity)
         self.summon_clones(0,1)
@@ -79,6 +82,7 @@ class mode_testing():
             if ((not self.game.current_clones[1].exists) or (not self.game.current_clones[0].exists)) and not self.end_scheduled:
                 pyglet.clock.schedule_once(self.end_round,5)
                 self.end_scheduled=True
+
 class mode_choosing():
     def __init__(self):
         self.choices=[-1,-1]

@@ -47,16 +47,16 @@ MSmashGL=pyglet.resource.image("imagefolder/GMSmashL.png")
 MSmashRR=pyglet.resource.image("imagefolder/BMSmashR.png")
 MSmashGR=pyglet.resource.image("imagefolder/GMSmashR.png")
 for e in [MSmashR,MSmashG]:
-    e.width=235*SPRITE_SIZE_MULT
-    e.height=300*SPRITE_SIZE_MULT
+    e.width=117*SPRITE_SIZE_MULT
+    e.height=150*SPRITE_SIZE_MULT
     e.anchor_x=e.width//2
 for e in [MSmashRL,MSmashGL,MSmashRR,MSmashGR]:
-    e.width=250*SPRITE_SIZE_MULT
-    e.height=300*SPRITE_SIZE_MULT
+    e.width=125*SPRITE_SIZE_MULT
+    e.height=150*SPRITE_SIZE_MULT
 for e in [MSmashRR,MSmashGR]:
-    e.anchor_x=100*SPRITE_SIZE_MULT
+    e.anchor_x=50*SPRITE_SIZE_MULT
 for e in [MSmashRL,MSmashGL]:
-    e.anchor_x=150*SPRITE_SIZE_MULT
+    e.anchor_x=75*SPRITE_SIZE_MULT
 
 fire=pyglet.resource.image("imagefolder/fire.png")
 
@@ -94,10 +94,10 @@ mixerG.height=60*SPRITE_SIZE_MULT
 mixerR.width=35*SPRITE_SIZE_MULT
 mixerR.height=60*SPRITE_SIZE_MULT
 
-megamixerG.width=200*SPRITE_SIZE_MULT
-megamixerG.height=300*SPRITE_SIZE_MULT
-megamixerR.width=200*SPRITE_SIZE_MULT
-megamixerR.height=300*SPRITE_SIZE_MULT
+megamixerG.width=75*SPRITE_SIZE_MULT
+megamixerG.height=125*SPRITE_SIZE_MULT
+megamixerR.width=75*SPRITE_SIZE_MULT
+megamixerR.height=125*SPRITE_SIZE_MULT
 
 teleG.width=50*SPRITE_SIZE_MULT
 teleG.height=80*SPRITE_SIZE_MULT
