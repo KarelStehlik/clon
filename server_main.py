@@ -30,6 +30,11 @@ class player_channel(Channel):
         mt.game.current_clones[self.side].add_shoot(data["a"])
     def Network_chosen(self,data):
         mc.make_choice(self.side,data["choice"],self.money)
+    def Network_place_building(self,data):
+        mbb.place(data["x"],data["y"])
+    def Network_finish_base(self,data):
+        mbb.side_finished(data["side"])
+
 mappNum=0
 class cw_server(Server):
     channelClass = player_channel
@@ -52,20 +57,13 @@ class mode_building():
     def __init__(self,**kw):
         pass
 
-class mapp():
+class mappify():
     def __init__(self,mapp):
         self.platforms=mapp
 class mode_testing():
-    def __init__(self,**kw):
-        if "mapp" in kw:
-            self.mapp=maps.maps[kw["mapp"]]
-        else:
-            self.mapp=random.choice(maps.maps)
-        self.mapp=mapp(self.mapp)
-        self.gravity=1000
+    def __init__(self,game):
+        self.game=game
         self.running=False
-        self.game=clones.Game(self.mapp,self.gravity)
-        self.summon_clones(0,1)
         self.end_scheduled=False
     def end_round(self,dt):
         self.end_scheduled=False
@@ -90,7 +88,7 @@ class mode_choosing():
         mc=self
         self.active=True
     def make_choice(self,side,c,money):
-        if 0<=c<=len(clones.possible_units) and clones.possible_units[c].cost<=money:
+        if self.active and 0<=c<=len(clones.possible_units) and clones.possible_units[c].cost<=money:
             self.choices[side]=int(c)
             if self.active and not self.choices[1-side] == -1:
                 global current_mode,mt
@@ -102,6 +100,28 @@ class mode_choosing():
     def tick(self,dt):
         pass
 
+class mode_base_building():
+    def __init__(self,mapp):
+        self.mapp=mappify(maps.maps[mapp])
+        self.gravity=1000
+        self.game=clones.Game(self.mapp,self.gravity)
+        self.done_0,self.done_1=False,False
+    def side_finished(self,side):
+        if side==1:
+            self.done_1=True
+        else:
+            self.done_0=True
+        if self.done_0 and self.done_1:
+            self.finish()
+    def finish(self):
+        global mt,current_mode
+        mt=mode_testing(self.game)
+        current_mode=mode_choosing()
+        channels.send_both({"action":"BB_finish"})
+    def tick(self,dt=0):
+        pass
+        
+
 def main_loop(dt):
     srvr.Pump()
     for e in channels.cn:
@@ -111,8 +131,10 @@ def main_loop(dt):
 while len(channels.cn)<2:
     srvr.Pump()
 mc=mode_choosing()
-mt=mode_testing(mapp=mappNum)
-current_mode=mt
+mt=None
+mbb=mode_base_building(mappNum)
+current_mode=mbb
+#mbb.finish()
 pyglet.clock.schedule_interval(main_loop,1.0/60)
 print("starting game")
 while True:

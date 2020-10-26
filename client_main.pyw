@@ -15,7 +15,9 @@ class MyNetworkListener(ConnectionListener):
     def Network_start(self,data):
         #print(data["action"])
         self.start=True
-        place.main=place.current_mode=mode_testing(place,place.mainBatch,mapp=data["mapp"])
+        place.bb=place.current_mode=mode_base_building(place,place.mainBatch,mapp=data["mapp"])
+    def Network_BB_finish(self,data):
+        place.bb.finish()
     def Network_stop(self,data):
         #print(data["action"])
         place.main.game.current_clones[data["side"]].move_stop()
@@ -171,7 +173,7 @@ class mappClass():
         for e in self.platforms:
             e.pic.x=(e.x-camx)*SPRITE_SIZE_MULT
 class mode_testing(mode):
-    def __init__(self,win,batch,**kw):
+    def __init__(self,win,batch,mapp):
         super().__init__(win,batch)
         global side
         self.side=side
@@ -183,13 +185,9 @@ class mode_testing(mode):
         self.background.scale_y=win.height/self.background.height
         self.half_bg_width=self.background.width//2
         self.bg_shift=0
-        if "mapp" in kw:
-            self.mapp=maps.maps[kw["mapp"]]
-        else:
-            self.mapp=random.choice(maps.maps)
+        self.mapp=mapp
         self.gravity=1000
         self.total_time=0
-        self.mapp=mappClass(self.mapp,batch)
         self.game=clones.Game(self.mapp,self.batch,connection,self.gravity,side=self.side)
     def start_round(self):
         self.win.current_mode=self
@@ -227,6 +225,20 @@ class mode_testing(mode):
         elif symbol==key.D:
             connection.Send({"action": "A"})
 
+class mode_base_building(mode):
+    def __init__(self,win,batch,mapp):
+        super().__init__(win,batch)
+        global side
+        self.side=side
+        self.mapp=mappClass(maps.maps[mapp],batch)
+    def mouse_press(self,x,y,button,modifiers):
+        self.try_finish()
+    def try_finish(self):
+        connection.Send({"action":"finish_base","side":self.side})
+    def finish(self):
+        self.win.main=mode_testing(self.win,self.batch,self.mapp)
+        self.win.cc.start(self.side)
+
 class windoo(pyglet.window.Window):
     def start(self):
         self.mainBatch = pyglet.graphics.Batch()
@@ -239,8 +251,9 @@ class windoo(pyglet.window.Window):
                                            font_size=int(40*SPRITE_SIZE_MULT))
         self.mouseheld=False
         self.cc=mode_choosing(self,self.mainBatch)
-        self.main=mode(self,self.mainBatch)
-        self.current_mode=self.main
+        self.bb=None
+        self.main=None
+        self.current_mode=mode(self,self.mainBatch)
         self.keys = key.KeyStateHandler()
         self.push_handlers(self.keys)
     def on_mouse_motion(self,x, y, dx, dy):
@@ -280,6 +293,7 @@ class windoo(pyglet.window.Window):
             self.sec-=1
             self.fpscount.text=str(self.frames)
             self.frames=0
+
 place = windoo(caption='test',fullscreen=True)
 place.start()
 pyglet.clock.schedule_interval(place.tick,1.0/60)
