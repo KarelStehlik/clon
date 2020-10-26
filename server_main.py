@@ -101,15 +101,19 @@ class mode_choosing():
                 current_mode.summon_clones(self.choices[0],self.choices[1])
     def tick(self,dt):
         pass
+
+def main_loop(dt):
+    srvr.Pump()
+    for e in channels.cn:
+        e.Pump()
+    current_mode.tick(dt)
+
 while len(channels.cn)<2:
     srvr.Pump()
 mc=mode_choosing()
 mt=mode_testing(mapp=mappNum)
 current_mode=mt
-pyglet.clock.schedule_interval(current_mode.tick,1.0/60)
+pyglet.clock.schedule_interval(main_loop,1.0/60)
 print("starting game")
 while True:
-    srvr.Pump()
-    for e in channels.cn:
-        e.Pump()
     pyglet.clock.tick()
