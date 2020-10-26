@@ -36,8 +36,8 @@ class Game():
         self.gravity=gravity
         self.bullets=[]
         self.deadclones=[]
-        channels.cn[1].get_money(999999)
-        channels.cn[0].get_money(999999)
+        #channels.cn[1].get_money(999999)
+        #channels.cn[0].get_money(999999)
     def start_round(self):
         for e in self.clones[0]:
             e.start()

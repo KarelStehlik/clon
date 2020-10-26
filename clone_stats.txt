@@ -11,4 +11,4 @@ Tank:cost=5000,hp=5000,height=80,width=150,spd=100,jump=0,dmg=500,aspd=3,bspd=10
 Engi:cost=5000,hp=50,height=70,width=30,spd=200,jump=600,aspd=1,radius=50,dmg=20
 Turret:cost=0,hp=300,height=60,width=30,spd=200,jump=600,aspd=3,bspd=700,rang=3000,dmg=600,eradius=150,detect=700
 MegaSmash:cost=6000,hp=10000,height=150,width=100,spd=70,jump=800,dmg=800,aspd=3,radius=100,kbx=1000,kby=500
-FlameThrower:cost=500,hp=200,height=90,width=45,spd=250,jump=600,dmg=30,aspd=0.2,aoex=200,aoey=50
+FlameThrower:cost=500,hp=200,height=90,width=45,spd=250,jump=600,dmg=30,aspd=0.2,aoex=250,aoey=50
