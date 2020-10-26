@@ -36,8 +36,8 @@ class Game():
         self.gravity=gravity
         self.bullets=[]
         self.deadclones=[]
-        #channels.cn[1].get_money(999999)
-        #channels.cn[0].get_money(999999)
+        channels.cn[1].get_money(999999)
+        channels.cn[0].get_money(999999)
     def start_round(self):
         for e in self.clones[0]:
             e.start()
@@ -117,6 +117,7 @@ class clone():
         self.move_locked=False
         self.shoot_queue=[]
         self.game=game
+        self.enemies=self.l[1-self.side]
     def add_shoot(self,a):
         self.shoot_queue.append(a)
     def schedule_die(self):
@@ -266,6 +267,13 @@ def AOE_square(source,x,y,radius,targets,damage,knockback_x=0,knockback_y=0):
             if (not knockback_x==0) or (not knockback_y==0):
                 e.knockback(knockback_x,knockback_y)
             e.take_damage(damage,source)
+def AOE_rect(source,x,y,x2,y2,targets,damage,knockback_x=0,knockback_y=0):
+    for e in targets:
+        if rect_intersect(x,y,x2,y2,e.x-e.width/2,
+                          e.y,e.x+e.width/2,e.y+e.height):
+            if (not knockback_x==0) or (not knockback_y==0):
+                e.knockback(knockback_x,knockback_y)
+            e.take_damage(damage,source)
 ###################################################################################################
 class BasicGuyBullet(Projectile):
     def __init__(self,x,y,vx,vy,enemies,rang,damage,game):
@@ -316,7 +324,6 @@ class Mixer(clone):
         super().__init__(game,side=side)
         self.dmg=self.stats["dmg"]
         self.lastshot=0
-        self.enemies=game.clones[1-self.side]
     def shoot(self,a,dt):
         AOE_square(self,self.x,self.y+self.height*2/3,self.width/2,self.enemies,self.dmg*dt)
     def can_shoot(self):
@@ -379,7 +386,6 @@ class Tele(clone):
         self.aspd=self.stats["aspd"]
         self.lastshot=0
         self.radius=self.stats["radius"]
-        self.enemies=game.clones[1-side]
         self.phase=255
     def shoot(self,a,dt):
         if self.active:
@@ -498,7 +504,6 @@ class MegaMixer(clone):
         super().__init__(game,side=side)
         self.dmg=self.stats["dmg"]
         self.rang=self.stats["rang"]
-        self.enemies=game.clones[1-self.side]
         self.succ=self.stats["succ"]
     def shoot(self,a,dt):
         for e in self.enemies:
@@ -525,7 +530,6 @@ class Smash(clone):
         self.knockback_x=self.stats["kbx"]
         self.knockback_y=self.stats["kby"]
         self.lastshot=0
-        self.enemies=self.l[1-side]
         self.radius=self.stats["radius"]
     def shoot(self,a,dt):
         if self.active:
@@ -593,7 +597,6 @@ class Tank(clone):
         self.lastshot=0
         self.eradius=self.stats["eradius"]
         self.dmg2=self.stats["dmg2"]
-        self.enemies=self.l[1-side]
     def shoot(self,a,dt):
         if self.active:
             channels.send_both({"action":"shoot","a":a,"side":self.side})
@@ -642,7 +645,6 @@ class Engi(clone):
         self.radius=self.stats["radius"]
         self.damage=self.stats["dmg"]
         self.turret_spawned=False
-        self.enemies=self.l[1-side]
         self.shoot,self.can_shoot=self.shoot1,self.can_shoot1
     def shoot1(self,a,dt):
         self.turret_spawned=True
@@ -725,7 +727,6 @@ class Turret(clone):
         self.detect=self.stats["detect"]
         self.x,self.y=x,y
         self.exists=True
-        self.enemies=self.l[1-self.side]
     def start(self):
         self.schedule_die()
     def die(self):
@@ -805,17 +806,16 @@ class MegaSmash(clone):
         self.knockback_x=self.stats["kbx"]
         self.knockback_y=self.stats["kby"]
         self.lastshot=0
-        self.enemies=self.l[1-side]
         self.radius=self.stats["radius"]
     def shoot(self,a,dt):
         if self.active:
             channels.send_both({"action":"shoot","a":a,"side":self.side})
             self.log.append(["shoot",self.exist_time,a])
         if a[0]<=0:
-            AOE_square(self,self.x-80,self.y+self.height/3,self.radius,self.enemies,self.dmg,
+            AOE_square(self,self.x-40,self.y+self.height/3,self.radius,self.enemies,self.dmg,
                        knockback_x=-self.knockback_x,knockback_y=self.knockback_y)
         else:
-            AOE_square(self,self.x+80,self.y+self.height/3,self.radius,self.enemies,self.dmg,
+            AOE_square(self,self.x+40,self.y+self.height/3,self.radius,self.enemies,self.dmg,
                        knockback_x=self.knockback_x,knockback_y=self.knockback_y)
     def can_shoot(self):
         if not self.exists:
@@ -834,7 +834,32 @@ class MegaSmash(clone):
                 channels.send_both({"action":"stomp",
                                     "amount":amount,"side":self.side})
 #################################################################################3
+class FlameThrower(clone):
+    name="FlameThrower"
+    cost=clone_stats[name]["cost"]
+    def __init__(self,game,side):
+        super().__init__(game,side=side)
+        self.dmg=self.stats["dmg"]
+        self.aspd=self.stats["aspd"]
+        self.aoex=self.stats["aoex"]
+        self.aoey=self.stats["aoey"]
+        self.lastshot=0
+    def shoot(self,a,dt):
+        if self.active:
+            channels.send_both({"action":"shoot","a":a,"side":self.side})
+            self.log.append(["shoot",self.exist_time,a])
+        AOE_rect(self,self.x,self.y+self.height//2-self.aoey//2,self.x+self.facing*self.aoex,
+                 self.y+self.height//2+self.aoey//2,self.enemies,self.dmg)
+    def can_shoot(self):
+        if not self.exists:
+            return False
+        t=self.exist_time
+        if t-self.lastshot>self.aspd:
+            self.lastshot=t
+            return True
+        return False
+##################################################################################################
 possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,Engi,
-                Tank,MegaSmash,MegaMixer]
+                Tank,MegaSmash,MegaMixer,FlameThrower]
 
 possible_units.sort(key=get_cost)

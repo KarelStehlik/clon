@@ -18,6 +18,8 @@ ShieldG=pyglet.resource.image("imagefolder/GShield.png").get_transform(flip_x=Tr
 ShieldR=pyglet.resource.image("imagefolder/BShield.png").get_transform(flip_x=True)
 sprayerR=pyglet.resource.image("imagefolder/BSprayer.png")
 sprayerG=pyglet.resource.image("imagefolder/GSprayer.png")
+flameR=pyglet.resource.image("imagefolder/BFlamethrower.png")
+flameG=pyglet.resource.image("imagefolder/GFlamethrower.png")
 
 earthquack=pyglet.resource.image("imagefolder/earthquack.png")
 earthquack.anchor_x=earthquack.width//2
@@ -66,6 +68,12 @@ for e in [tankR,tankG]:
     e.width=250
     e.height=90
     e.anchor_x=60
+
+flameG.width=65*SPRITE_SIZE_MULT
+flameG.height=90*SPRITE_SIZE_MULT
+flameR.width=65*SPRITE_SIZE_MULT
+flameR.height=90*SPRITE_SIZE_MULT
+flameG.anchor_x=flameR.anchor_x=30*SPRITE_SIZE_MULT
 
 sprayerG.width=60*SPRITE_SIZE_MULT
 sprayerG.height=80*SPRITE_SIZE_MULT

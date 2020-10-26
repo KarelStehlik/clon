@@ -87,16 +87,18 @@ class particle():
         del self
 class fire(particle):
     img=images.fire
-    def __init__(self,x,y,size,duration,game,vy=0,growth=0.003):
+    def __init__(self,x,y,size,duration,game,vy=0,vx=0,growth=0.003):
         super().__init__(x,y,size,duration,game)
         self.sprite.rotation=random.randint(0,359)
         self.vy=vy
+        self.vx=vx
         self.growth=growth
     def tick(self,dt):
         if self.existtime>self.duration:
             super().die()
             return
         self.y+=self.vy*dt
+        self.x+=self.vx*dt
         self.sprite.opacity=255*(1-self.existtime/self.duration)
         self.sprite.scale+=self.growth*dt*SPRITE_SIZE_MULT
         super().tick(dt)
@@ -142,6 +144,7 @@ class clone():
         self.log_completed=0
         self.exist_time=0
         game.clones[self.side].append(self)
+        self.enemies=game.clones[1-self.side]
         self.facing=1
         self.moving=0
         self.move_locked=False
@@ -324,6 +327,13 @@ class Projectile():
 def AOE_square(source,x,y,radius,targets,damage,knockback_x=0,knockback_y=0):
     for e in targets:
         if rect_intersect(x-radius,y-radius,x+radius,y+radius,e.x-e.width/2,
+                          e.y,e.x+e.width/2,e.y+e.height):
+            if (not knockback_x==0) or (not knockback_y==0):
+                e.knockback(knockback_x,knockback_y)
+            e.take_damage(damage,source)
+def AOE_rect(source,x,y,x2,y2,targets,damage,knockback_x=0,knockback_y=0):
+    for e in targets:
+        if rect_intersect(x,y,x2,y2,e.x-e.width/2,
                           e.y,e.x+e.width/2,e.y+e.height):
             if (not knockback_x==0) or (not knockback_y==0):
                 e.knockback(knockback_x,knockback_y)
@@ -920,7 +930,7 @@ class MegaSmash(clone):
             self.right=pyglet.sprite.Sprite(images.MSmashRR,self.sprite.x,self.sprite.y,batch=None,group=dudeg)
     def shoot(self,a,dt):
         if a[0]<=0:
-            AOE_square(self,self.x-80,self.y+self.height/3,self.radius,self.enemies,self.dmg,
+            AOE_square(self,self.x-40,self.y+self.height/3,self.radius,self.enemies,self.dmg,
                        knockback_x=-self.knockback_x,knockback_y=self.knockback_y)
             self.smashing="left"
             self.sprite.batch=None
@@ -932,7 +942,7 @@ class MegaSmash(clone):
                 self.sprite.batch=self.game.batch
             self.sprite.scale_x=self.facing
         else:
-            AOE_square(self,self.x+80,self.y+self.height/3,self.radius,self.enemies,self.dmg,
+            AOE_square(self,self.x+40,self.y+self.height/3,self.radius,self.enemies,self.dmg,
                        knockback_x=self.knockback_x,knockback_y=self.knockback_y)
             self.smashing="right"
             self.sprite.batch=None
@@ -979,6 +989,30 @@ class MegaSmash(clone):
                        amount,
                        knockback_y=amount/2)
 #######################################################################
+class FlameThrower(clone):
+    name="FlameThrower"
+    cost=clone_stats[name]["cost"]
+    imageG=images.flameG
+    imageR=images.flameR
+    def __init__(self,game,side):
+        super().__init__(game,side=side)
+        self.dmg=self.stats["dmg"]
+        self.aspd=self.stats["aspd"]
+        self.aoey=self.stats["aoey"]
+        self.aoex=self.stats["aoex"]
+        self.lastshot=0
+    def shoot(self,a,dt):
+        AOE_rect(self,self.x,self.y+self.height//2-self.aoey//2,self.x+self.facing*self.aoex,
+                 self.y+self.height//2+self.aoey//2,self.enemies,self.dmg)
+        fire(self.x+self.width*2*self.facing/3,self.y+self.height*2/3,10,0.8,
+             self.game,vx=400*self.facing,growth=0.3)
+    def can_shoot(self):
+        t=self.exist_time
+        if t-self.lastshot>self.aspd and self.exists:
+            self.lastshot=t
+            return True
+        return False
+########################################################################
 possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,Engi,
-                Tank,MegaSmash,MegaMixer]
+                Tank,MegaSmash,MegaMixer,FlameThrower]
 possible_units.sort(key=get_cost)
