@@ -144,6 +144,11 @@ BazookaBullet.height=int(BazookaBullet.height*SPRITE_SIZE_MULT/15)
 BazookaBullet.anchor_x=BazookaBullet.width
 BazookaBullet.anchor_y=BazookaBullet.height//2
 
+Grenade=pyglet.resource.image("imagefolder/Grenade.png")
+Grenade.width=int(25*SPRITE_SIZE_MULT)
+Grenade.height=int(40*SPRITE_SIZE_MULT)
+Grenade.anchor_x=Grenade.width//2
+
 buttonG=pyglet.image.load("imagefolder/GreenButton.png")
 buttonR=pyglet.image.load("imagefolder/RedButton.png")
 platform=pyglet.resource.image("imagefolder/platform.png")

@@ -118,11 +118,11 @@ class earth(particle):
         self.sprite.scale_y+=self.growth*dt*SPRITE_SIZE_MULT
         super().tick(dt)
 def rect_intersect(ax1,ay1,ax2,ay2,bx1,by1,bx2,by2):
-    return ax1<=bx2 and bx1<=ax2 and ay1<=by2 and by1<=ay2
+    return max(ax1,ax2)>=min(bx1,bx2) and  min(ax1,ax2)<=max(bx1,bx2) and max(ay1,ay2)>=min(by1,by2) and  min(ay1,ay2)<=max(by1,by2)
 def take_second(l):
     return l[1]
 class clone():
-    def __init__(self,game,AI=False,**kwargs):
+    def __init__(self,game,AI=False,x=None,y=None,**kwargs):
         self.side=kwargs["side"]
         self.game=game
         stats=clone_stats[self.name]
@@ -137,8 +137,8 @@ class clone():
         self.width=stats["width"]
         self.spd=stats["spd"]
         self.jump=stats["jump"]
-        self.active=True
-        self.exists=False
+        self.active=not AI
+        self.exists=True
         self.vx=self.vy=0
         self.log=[]
         self.log_completed=0
@@ -149,32 +149,33 @@ class clone():
         self.moving=0
         self.move_locked=False
         self.hpbar_scale=SPRITE_SIZE_MULT*self.width/images.buttonG.width
-        if self.side==0:
-            self.x=10
+        if x==None:
+            if self.side==0:
+                self.x=10
+            else:
+                self.x=1270
+            self.y=100
         else:
-            self.x=1270
-        self.y=100
+            self.x,self.y=x,y
+        self.baseX,self.baseY=self.x,self.y
         self.vpoint=self.x-1280/2
         self.sprite=pyglet.sprite.Sprite(self.skin,10,100,batch=self.game.batch,group=dudeg)
         self.hpbar=pyglet.sprite.Sprite(images.buttonG,self.x,self.y+self.height,batch=self.game.batch,group=dudeg)
         self.hpbar.scale=self.hpbar_scale
         self.hpbar.scale_y=5/self.hpbar.height
-        arro=[images.blue_arrow,images.red_arrow][self.side]
         self.additional_images=[]
-        self.additional_images.append([pyglet.sprite.Sprite(arro,
-                                        x=self.x*SPRITE_SIZE_MULT,
-                                        y=(self.y+self.height+10)*SPRITE_SIZE_MULT,
-                                        group=projectileg,batch=self.game.batch),
-                                       0,self.height+10])
+        if self.active:
+            arro=[images.blue_arrow,images.red_arrow][self.side]
+            self.additional_images.append([pyglet.sprite.Sprite(arro,
+                                            x=self.x*SPRITE_SIZE_MULT,
+                                            y=(self.y+self.height+10)*SPRITE_SIZE_MULT,
+                                            group=projectileg,batch=self.game.batch),
+                                           0,self.height+10])
         self.AI=AI
         if AI:
             self.detect=stats["detect"]
     def start(self):
-        if self.side==0:
-            self.x=10
-        else:
-            self.x=1270
-        self.y=100
+        self.x,self.y=self.baseX,self.baseY
         self.sprite.batch=self.game.batch
         self.hpbar.batch=self.game.batch
         self.hpbar.scale_x=1
@@ -183,6 +184,8 @@ class clone():
         self.log_completed=0
         self.exist_time=0
         self.vx=self.vy=0
+        if self.AI:
+            self.log=[]
     def schedule_die(self):
         if self.exists:
             self.exists=False
@@ -253,7 +256,13 @@ class clone():
                         target=e
             if d<self.detect:
                 self.shoot([target.x-self.x,target.y+
-                            target.height/2-self.y-self.height/2])  
+                            target.height/2-self.y-self.height/2],0)
+                if target.x>self.x:
+                    self.d_start()
+                else:
+                    self.a_start()
+            else:
+                self.move_stop()
     def move(self,dt):
         if self.exists:
             if self.AI:
@@ -263,24 +272,25 @@ class clone():
                 self.vx=self.moving*self.spd
             self.exist_time+=dt
             if not self.active:
-                for e in self.log[self.log_completed::]:
-                    if e[1]<self.exist_time:
-                        self.log_completed+=1
-                        if e[0]=="d":
-                            self.d_start()
-                        elif e[0]=="stop":
-                            self.move_stop()
-                        elif e[0]=="a":
-                            self.a_start()
-                        elif e[0]=="w":
-                            self.w()
-                        elif e[0]=="shoot":
-                            self.shoot(e[2],dt)
-                        elif e[0]=="die":
-                            self.schedule_die()
-                            return
-                    else:
-                        break
+                if not self.AI:
+                    for e in self.log[self.log_completed::]:
+                        if e[1]<self.exist_time:
+                            self.log_completed+=1
+                            if e[0]=="d":
+                                self.d_start()
+                            elif e[0]=="stop":
+                                self.move_stop()
+                            elif e[0]=="a":
+                                self.a_start()
+                            elif e[0]=="w":
+                                self.w()
+                            elif e[0]=="shoot":
+                                self.shoot(e[2],dt)
+                            elif e[0]=="die":
+                                self.schedule_die()
+                                return
+                        else:
+                            break
                 self.x=self.x+self.vx*dt
                 ycap=-500
                 for e in self.game.mapp.platforms:
@@ -300,6 +310,8 @@ class clone():
                     self.schedule_die()
             self.update_pos(self.x,self.y)
     def stomp(self,amount):
+        pass
+    def shoot(self,a,dt=0):
         pass
     def can_shoot(self):
         return False
@@ -370,8 +382,8 @@ class BasicGuy(clone):
     cost=clone_stats[name]["cost"]
     imageG=images.gunmanG
     imageR=images.gunmanR
-    def __init__(self,game,side):
-        super().__init__(game,side=side)
+    def __init__(self,game,side,**kw):
+        super().__init__(game,side=side,**kw)
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
@@ -402,8 +414,8 @@ class Mixer(clone):
     cost=clone_stats[name]["cost"]
     imageG=images.mixerG
     imageR=images.mixerR
-    def __init__(self,game,side):
-        super().__init__(game,side=side)
+    def __init__(self,game,side,**kw):
+        super().__init__(game,side=side,**kw)
         self.dmg=self.stats["dmg"]
         self.lastshot=0
         self.enemies=game.clones[1-self.side]
@@ -419,8 +431,8 @@ class Bazooka(clone):
     cost=clone_stats[name]["cost"]
     imageG=images.ZookaG
     imageR=images.ZookaR
-    def __init__(self,game,side):
-        super().__init__(game,side=side)
+    def __init__(self,game,side,**kw):
+        super().__init__(game,side=side,**kw)
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
@@ -470,8 +482,8 @@ class Tele(clone):
     cost=clone_stats[name]["cost"]
     imageG=images.teleG
     imageR=images.teleR
-    def __init__(self,game,side):
-        super().__init__(game,side=side)
+    def __init__(self,game,side,**kw):
+        super().__init__(game,side=side,**kw)
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
         self.lastshot=0
@@ -509,8 +521,8 @@ class Shield(clone):
     cost=clone_stats[name]["cost"]
     imageG=images.ShieldG
     imageR=images.ShieldR
-    def __init__(self,game,side):
-        super().__init__(game,side=side)
+    def __init__(self,game,side,**kw):
+        super().__init__(game,side=side,**kw)
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
@@ -546,8 +558,8 @@ class Sprayer(clone):
     cost=clone_stats[name]["cost"]
     imageG=images.sprayerG
     imageR=images.sprayerR
-    def __init__(self,game,side):
-        super().__init__(game,side=side)
+    def __init__(self,game,side,**kw):
+        super().__init__(game,side=side,**kw)
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
@@ -569,8 +581,8 @@ class MegaMixer(clone):
     cost=clone_stats[name]["cost"]
     imageG=images.megamixerG
     imageR=images.megamixerR
-    def __init__(self,game,side):
-        super().__init__(game,side=side)
+    def __init__(self,game,side,**kw):
+        super().__init__(game,side=side,**kw)
         self.dmg=self.stats["dmg"]
         self.rang=self.stats["rang"]
         self.enemies=game.clones[1-self.side]
@@ -593,8 +605,8 @@ class Smash(clone):
     cost=clone_stats[name]["cost"]
     imageG=images.SmashG
     imageR=images.SmashR
-    def __init__(self,game,side):
-        super().__init__(game,side=side)
+    def __init__(self,game,side,**kw):
+        super().__init__(game,side=side,**kw)
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
         self.lastshot=0
@@ -667,8 +679,8 @@ class MachineGun(clone):
     cost=clone_stats[name]["cost"]
     imageG=images.gunmanG
     imageR=images.gunmanR
-    def __init__(self,game,side):
-        super().__init__(game,side=side)
+    def __init__(self,game,side,**kw):
+        super().__init__(game,side=side,**kw)
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
@@ -699,8 +711,8 @@ class Tank(clone):
     cost=clone_stats[name]["cost"]
     imageG=images.tankG
     imageR=images.tankR
-    def __init__(self,game,side):
-        super().__init__(game,side=side)
+    def __init__(self,game,side,**kw):
+        super().__init__(game,side=side,**kw)
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
@@ -746,8 +758,8 @@ class Engi(clone):
     cost=clone_stats[name]["cost"]
     imageG=images.engiG
     imageR=images.engiR
-    def __init__(self,game,side):
-        super().__init__(game,side=side)
+    def __init__(self,game,side,**kw):
+        super().__init__(game,side=side,**kw)
         self.lastshot=0
         self.turrets=[]
         self.aspd=self.stats["aspd"]
@@ -787,17 +799,14 @@ class Engi(clone):
 
 class Grenade(Projectile):
     def __init__(self,x,y,vx,vy,game,side,rang,damage,radius):
-        super().__init__(x,y,vx,vy,game,side,rang,damage,images.BazookaBullet)
+        super().__init__(x,y,vx,vy,game,side,rang,damage,images.Grenade)
         self.radius=radius
         if vx==0:
             if vy<0:
                 self.sprite.rotation=-90
             else:
                 self.sprite.rotation==90
-        elif vx>0:
-            self.sprite.rotation=-math.atan(vy/vx)*180/math.pi
-        else:
-            self.sprite.rotation=180-math.atan(vy/vx)*180/math.pi
+        self.sprite.rotation=-math.atan(vy/vx)*180/math.pi
     def explode(self,e=None):
         AOE_square(self,self.x,self.y,self.radius,self.enemies,self.damage)
         fire(self.x,self.y,0,0.5,self.game,growth=self.radius/150)
@@ -862,7 +871,7 @@ class Turret(clone):
             self.lastshot=t
             return True
         return False
-    def shoot(self,a):
+    def shoot(self,a,dt):
         x=a[0]
         y=a[1]
         if x==0:
@@ -881,8 +890,8 @@ class MegaSmash(clone):
     cost=clone_stats[name]["cost"]
     imageG=images.MSmashG
     imageR=images.MSmashR
-    def __init__(self,game,side):
-        super().__init__(game,side=side)
+    def __init__(self,game,side,**kw):
+        super().__init__(game,side=side,**kw)
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
         self.knockback_x=self.stats["kbx"]
@@ -966,8 +975,8 @@ class FlameThrower(clone):
     cost=clone_stats[name]["cost"]
     imageG=images.flameG
     imageR=images.flameR
-    def __init__(self,game,side):
-        super().__init__(game,side=side)
+    def __init__(self,game,side,**kw):
+        super().__init__(game,side=side,**kw)
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
         self.aoey=self.stats["aoey"]
@@ -976,8 +985,8 @@ class FlameThrower(clone):
     def shoot(self,a,dt):
         AOE_rect(self,self.x,self.y+self.height//2-self.aoey//2,self.x+self.facing*self.aoex,
                  self.y+self.height//2+self.aoey//2,self.enemies,self.dmg)
-        fire(self.x+self.width*2*self.facing/3,self.y+self.height*2/3,10,0.8,
-             self.game,vx=400*self.facing,growth=0.3)
+        fire(self.x+self.width*2*self.facing/3,self.y+self.height*2/3,40,0.8,
+             self.game,vx=400*self.facing,growth=0.10)
     def can_shoot(self):
         t=self.exist_time
         if t-self.lastshot>self.aspd and self.exists:
