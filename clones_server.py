@@ -85,7 +85,7 @@ def rect_intersect(ax1,ay1,ax2,ay2,bx1,by1,bx2,by2):
 def take_second(l):
     return l[1]
 class clone():
-    def __init__(self,game,**kwargs):
+    def __init__(self,game,AI=False,**kwargs):
         global ID
         stats=clone_stats[self.name]
         self.stats=stats
@@ -118,6 +118,9 @@ class clone():
         self.shoot_queue=[]
         self.game=game
         self.enemies=self.l[1-self.side]
+        self.AI=AI
+        if AI:
+            self.detect=stats["detect"]
     def add_shoot(self,a):
         self.shoot_queue.append(a)
     def can_shoot(self):
@@ -181,8 +184,22 @@ class clone():
             self.vx+=x
             self.vy+=y
             self.move_locked=True
+    def AI_move(self):
+        if self.can_shoot():
+            d=self.detect
+            for e in self.enemies:
+                if e.exists:
+                    de=abs(self.x-e.x)
+                    if de<=d:
+                        d=de
+                        target=e
+            if d<self.detect:
+                self.shoot([target.x-self.x,target.y+
+                            target.height/2-self.y-self.height/2])  
     def move(self,dt):
         if self.exists:
+            if self.AI:
+                self.AI_move()
             if self.move_locked and self.on_ground():
                 self.move_locked=False
                 self.vx=self.moving*self.spd
@@ -713,7 +730,7 @@ class Grenade(Projectile):
 class Turret(clone):
     name="Turret"
     def __init__(self,game,side,l2,x,y):
-        super().__init__(game,side=side)
+        super().__init__(game,side=side,AI=True)
         self.l2=l2
         l2.append(self)
         self.lastshot=0
@@ -722,7 +739,6 @@ class Turret(clone):
         self.bspd=self.stats["bspd"]
         self.rang=self.stats["rang"]
         self.eradius=self.stats["eradius"]
-        self.detect=self.stats["detect"]
         self.x,self.y=x,y
         self.exists=True
     def start(self):
@@ -737,30 +753,6 @@ class Turret(clone):
             self.hp-=amount
             if self.hp<=0:
                 self.schedule_die()
-    def move(self,dt):
-        if self.exists:
-            if self.can_shoot():
-                self.aim_shoot()
-            if self.move_locked and self.on_ground():
-                self.move_locked=False
-                self.vx=self.moving*self.spd
-            self.exist_time+=dt
-            self.x=self.x+self.vx*dt
-            ycap=-500
-            for e in self.mapp.platforms:
-                if self.y>e.y and self.vy<0 and rect_intersect(self.x,
-                                                                   self.y+self.vy*dt,
-                                                                   self.x,
-                                                                   self.y,
-                                                                   e.x,e.y+e.h,e.x+e.w,e.y+e.h):
-                    ycap=max(e.y+e.h,ycap)
-            self.y=max(ycap,self.y+self.vy*dt)
-            if not ycap==-500:
-                self.vy=0
-            else:
-                self.vy-=self.game.gravity*dt
-            if self.y<=-500:
-                self.schedule_die()
     def can_shoot(self):
         if not self.exists:
             return False
@@ -768,18 +760,7 @@ class Turret(clone):
         if t-self.lastshot>self.aspd:
             self.lastshot=t
             return True
-        return False
-    def aim_shoot(self):
-        d=self.rang
-        for e in self.enemies:
-            if e.exists:
-                de=abs(self.x-e.x)
-                if de<=d:
-                    d=de
-                    target=e
-        if d<self.detect:
-            self.shoot([target.x-self.x,target.y+
-                        target.height/2-self.y-self.height/2+100])                
+        return False                
     def shoot(self,a):
         x=a[0]
         y=a[1]
