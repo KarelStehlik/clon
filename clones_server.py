@@ -120,6 +120,8 @@ class clone():
         self.enemies=self.l[1-self.side]
     def add_shoot(self,a):
         self.shoot_queue.append(a)
+    def can_shoot(self):
+        return False
     def schedule_die(self):
         if self.exists:
             self.exists=False
@@ -326,8 +328,6 @@ class Mixer(clone):
         self.lastshot=0
     def shoot(self,a,dt):
         AOE_square(self,self.x,self.y+self.height*2/3,self.width/2,self.enemies,self.dmg*dt)
-    def can_shoot(self):
-        return False
     def move(self,dt):
         super().move(dt)
         if self.exists:
@@ -513,8 +513,6 @@ class MegaMixer(clone):
                 else:
                     e.x-=self.succ*dt
         AOE_square(self,self.x,self.y+self.height/2,self.width/2,self.enemies,self.dmg*dt)
-    def can_shoot(self):
-        return False
     def move(self,dt):
         super().move(dt)
         if self.exists:

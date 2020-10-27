@@ -284,6 +284,8 @@ class clone():
             self.update_pos(self.x,self.y)
     def stomp(self,amount):
         pass
+    def can_shoot(self):
+        return False
     def die(self):
         if self.active:
             self.active=False
@@ -390,8 +392,6 @@ class Mixer(clone):
         self.enemies=game.clones[1-self.side]
     def shoot(self,a,dt):
         AOE_square(self,self.x,self.y+self.height*2/3,self.width/2,self.enemies,self.dmg*dt)
-    def can_shoot(self):
-        return False
     def move(self,dt):
         super().move(dt)
         if self.exists:
@@ -566,8 +566,6 @@ class MegaMixer(clone):
                 else:
                     e.x-=self.succ*dt
         AOE_square(self,self.x,self.y+self.height/2,self.width/2,self.enemies,self.dmg*dt)
-    def can_shoot(self):
-        return False
     def move(self,dt):
         super().move(dt)
         if self.exists:
