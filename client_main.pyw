@@ -57,6 +57,8 @@ class MyNetworkListener(ConnectionListener):
         place.main.game.current_clones[1].update_pos(data["x1"],data["y1"])
     def Network_update_money(self,data):
         place.money=data["money"]
+    def Network_place_thing(self,data):
+        place.bb.place_thing(data["c"],data["side"],data["x"],data["y"])
 nwl=MyNetworkListener()
 class mode():
     def __init__(self,win,batch):
@@ -229,14 +231,57 @@ class mode_base_building(mode):
         super().__init__(win,batch)
         global side
         self.side=side
-        self.gravity=1000
+        self.gravity=GRAVITY
+        bg=pyglet.graphics.OrderedGroup(0)
         self.mapp=mappClass(maps.maps[mapp],batch)
         self.game=clones.Game(self.mapp,self.batch,connection,self.gravity,side=self.side)
+        self.camx=0
+        self.selected=0
+        self.money=BASE_BUILD_MONEY
+        self.selected=0
+        self.bg_red=batch.add(4,pyglet.gl.GL_QUADS,bg,
+                                    ("v2i",[SCREEN_WIDTH//2,0,10000,0,10000,SCREEN_HEIGHT,
+                                            SCREEN_WIDTH//2,SCREEN_HEIGHT]),
+                                    ("c3B",[255,0,0,0,0,0,0,0,0,255,0,0]),
+                                    )
+        self.bg_blue=batch.add(4,pyglet.gl.GL_QUADS,bg,
+                                    ("v2i",[SCREEN_WIDTH//2,0,-10000,0,-10000,SCREEN_HEIGHT,
+                                            SCREEN_WIDTH//2,SCREEN_HEIGHT]),
+                                    ("c3B",[0,0,255,0,0,0,0,0,0,0,0,255]),
+                                    )
+    def key_press(self,symbol,modifiers):
+        if symbol==key.ENTER:
+            self.try_finish()
+        elif symbol==key.A:
+            self.camx-=200
+            clones.camx=self.camx
+            self.mapp.update(self.camx)
+            for e in self.game.clones[1]+self.game.clones[0]:
+                e.update_pos(e.x,e.y)
+            self.bg_red.vertices[0::2]=[e+200 for e in self.bg_red.vertices[0::2]]
+            self.bg_blue.vertices[0::2]=[e+200 for e in self.bg_blue.vertices[0::2]]
+        elif symbol==key.D:
+            self.camx+=200
+            clones.camx=self.camx
+            self.mapp.update(self.camx)
+            for e in self.game.clones[1]+self.game.clones[0]:
+                e.update_pos(e.x,e.y)
+            self.bg_red.vertices[0::2]=[e-200 for e in self.bg_red.vertices[0::2]]
+            self.bg_blue.vertices[0::2]=[e-200 for e in self.bg_blue.vertices[0::2]]
     def mouse_press(self,x,y,button,modifiers):
-        self.try_finish()
+        c=self.selected
+        if self.money>=clones.base_defenses[c].cost:
+            connection.Send({"action":"place_thing","x":x//SPRITE_SIZE_MULT+self.camx,
+                             "y":y//SPRITE_SIZE_MULT,"c":c})
     def try_finish(self):
-        connection.Send({"action":"finish_base","side":self.side})
+        connection.Send({"action":"finish_base"})
+    def place_thing(self,c,side,x,y):
+        if side==self.side:
+            self.money-=clones.base_defenses[c].cost
+        self.game.add_base_defense(c,side,x,y)
     def finish(self):
+        self.bg_blue.delete()
+        self.bg_red.delete()
         self.win.main=mode_testing(self.win,self.batch,self.mapp,self.game)
         self.win.cc.start(self.side)
 

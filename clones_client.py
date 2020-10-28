@@ -177,6 +177,7 @@ class clone():
         self.AI=AI
         if AI:
             self.detect=stats["detect"]
+        self.update_pos(self.x,self.y)
     def start(self):
         self.x,self.y=self.baseX,self.baseY
         self.sprite.batch=self.game.batch
@@ -250,23 +251,23 @@ class clone():
                 d=min(self.y-e.y-e.h,d)
         return d
     def AI_move(self):
-        if self.can_shoot():
-            d=self.detect
-            for e in self.enemies:
-                if e.exists:
-                    de=abs(self.x-e.x)
-                    if de<d:
-                        d=de
-                        target=e
-            if d<self.detect:
+        d=self.detect
+        for e in self.enemies:
+            if e.exists:
+                de=abs(self.x-e.x)
+                if de<d:
+                    d=de
+                    target=e
+        if d<self.detect:
+            if self.can_shoot():
                 self.shoot([target.x-self.x,target.y+
                             target.height/2-self.y-self.height/2],0)
-                if target.x>self.x:
-                    self.d_start()
-                else:
-                    self.a_start()
+            if target.x>self.x:
+                self.d_start()
             else:
-                self.move_stop()
+                self.a_start()
+        else:
+            self.move_stop()
     def move(self,dt):
         if self.exists:
             if self.AI:

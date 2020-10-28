@@ -30,10 +30,10 @@ class player_channel(Channel):
         mt.game.current_clones[self.side].add_shoot(data["a"])
     def Network_chosen(self,data):
         mc.make_choice(self.side,data["choice"],self.money)
-    def Network_place_building(self,data):
-        mbb.place(data["x"],data["y"])
     def Network_finish_base(self,data):
-        mbb.side_finished(data["side"])
+        mbb.side_finished(self.side)
+    def Network_place_thing(self,data):
+        mbb.place_thing(data["c"],self.side,data["x"],data["y"])
 
 mappNum=0
 class cw_server(Server):
@@ -103,9 +103,10 @@ class mode_choosing():
 class mode_base_building():
     def __init__(self,mapp):
         self.mapp=mappify(maps.maps[mapp])
-        self.gravity=1000
+        self.gravity=GRAVITY
         self.game=clones.Game(self.mapp,self.gravity)
         self.done_0,self.done_1=False,False
+        self.money=[BASE_BUILD_MONEY,BASE_BUILD_MONEY]
     def side_finished(self,side):
         if side==1:
             self.done_1=True
@@ -113,6 +114,12 @@ class mode_base_building():
             self.done_0=True
         if self.done_0 and self.done_1:
             self.finish()
+    def place_thing(self,c,side,x,y):
+        if side==1 and x>SCREEN_WIDTH//2 or side==0 and x<SCREEN_WIDTH//2:
+            if self.money[side]>=clones.base_defenses[c].cost:
+                self.game.add_base_defense(c,side,x,y)
+                channels.send_both({"action":"place_thing","x":x,"y":y,"c":c,"side":side})
+                self.money[side]-=clones.base_defenses[c].cost
     def finish(self):
         global mt,current_mode
         mt=mode_testing(self.game)
