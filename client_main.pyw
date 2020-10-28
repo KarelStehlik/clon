@@ -87,6 +87,8 @@ class mode():
         pass
     def mouse_release(self,x,y,button,modifiers):
         pass
+    def mouse_scroll(self, x, y, scroll_x, scroll_y):
+        pass
 def rect_intersect(ax1,ay1,ax2,ay2,bx1,by1,bx2,by2):
     return ax1<=bx2 and bx1<=ax2 and ay1<=by2 and by1<=ay2
 class mode_choosing(mode):
@@ -249,6 +251,38 @@ class mode_base_building(mode):
                                             SCREEN_WIDTH//2,SCREEN_HEIGHT]),
                                     ("c3B",[0,0,255,0,0,0,0,0,0,0,0,255]),
                                     )
+        if self.side==0:
+            self.cselect=pyglet.sprite.Sprite(clones.base_defenses[self.selected].imageG,
+                                              x=100*SPRITE_SIZE_MULT,y=20*SPRITE_SIZE_MULT,
+                                              group=clones.dudeg,batch=self.batch)
+        else:
+            self.cselect=pyglet.sprite.Sprite(clones.base_defenses[self.selected].imageR,
+                                              x=100*SPRITE_SIZE_MULT,y=20*SPRITE_SIZE_MULT,
+                                              group=clones.dudeg,batch=self.batch)
+        self.cselect.scale=3
+        self.cselect_cost=pyglet.text.Label(x=100*SPRITE_SIZE_MULT,y=20*SPRITE_SIZE_MULT,
+                            text=str(int(clones.base_defenses[self.selected].base_cost)),color=(255,255,0,255),
+                            batch=self.batch,group=clones.projectileg,font_size=int(40*SPRITE_SIZE_MULT),
+                            anchor_x="center")
+        self.money_label=pyglet.text.Label(x=SCREEN_WIDTH-20,y=SCREEN_HEIGHT-20,
+                            text=str(self.money),color=(255,255,0,255),
+                            batch=self.batch,group=clones.projectileg,font_size=int(40*SPRITE_SIZE_MULT),
+                            anchor_x="right",anchor_y="top")
+        self.win.money_label.batch=None
+    def mouse_scroll(self, x, y, scroll_x, scroll_y):
+        self.selected+=int(scroll_y)
+        self.selected=self.selected%len(clones.base_defenses)
+        self.cselect.delete()
+        if self.side==0:
+            self.cselect=pyglet.sprite.Sprite(clones.base_defenses[self.selected].imageG,
+                                              x=100*SPRITE_SIZE_MULT,y=20*SPRITE_SIZE_MULT,
+                                              group=clones.dudeg,batch=self.batch)
+        else:
+            self.cselect=pyglet.sprite.Sprite(clones.base_defenses[self.selected].imageR,
+                                              x=100*SPRITE_SIZE_MULT,y=20*SPRITE_SIZE_MULT,
+                                              group=clones.dudeg,batch=self.batch)
+        self.cselect.scale=3
+        self.cselect_cost.text=str(int(clones.base_defenses[self.selected].base_cost))
     def key_press(self,symbol,modifiers):
         if symbol==key.ENTER:
             self.try_finish()
@@ -270,18 +304,23 @@ class mode_base_building(mode):
             self.bg_blue.vertices[0::2]=[e-200 for e in self.bg_blue.vertices[0::2]]
     def mouse_press(self,x,y,button,modifiers):
         c=self.selected
-        if self.money>=clones.base_defenses[c].cost:
+        if self.money>=clones.base_defenses[c].base_cost:
             connection.Send({"action":"place_thing","x":x//SPRITE_SIZE_MULT+self.camx,
                              "y":y//SPRITE_SIZE_MULT,"c":c})
     def try_finish(self):
         connection.Send({"action":"finish_base"})
     def place_thing(self,c,side,x,y):
         if side==self.side:
-            self.money-=clones.base_defenses[c].cost
+            self.money-=int(clones.base_defenses[c].base_cost)
+            self.money_label.text=str(self.money)
         self.game.add_base_defense(c,side,x,y)
     def finish(self):
         self.bg_blue.delete()
         self.bg_red.delete()
+        self.cselect.delete()
+        self.cselect_cost.delete()
+        self.money_label.delete()
+        self.win.money_label.batch=self.batch
         self.win.main=mode_testing(self.win,self.batch,self.mapp,self.game)
         self.win.cc.start(self.side)
 
@@ -329,6 +368,8 @@ class windoo(pyglet.window.Window):
     def on_mouse_press(self,x,y,button,modifiers):
         self.mouseheld=True
         self.current_mode.mouse_press(x,y,button,modifiers)
+    def on_mouse_scroll(self,x, y, scroll_x, scroll_y):
+        self.current_mode.mouse_scroll(x, y, scroll_x, scroll_y)
     def on_deactivate(self):
         self.minimize()
     def check(self,dt):

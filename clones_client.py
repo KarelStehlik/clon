@@ -139,6 +139,7 @@ class clone():
         self.width=stats["width"]
         self.spd=stats["spd"]
         self.jump=stats["jump"]
+        self.rang=stats["rang"]
         self.active=not AI
         self.exists=True
         self.vx=self.vy=0
@@ -262,10 +263,13 @@ class clone():
             if self.can_shoot():
                 self.shoot([target.x-self.x,target.y+
                             target.height/2-self.y-self.height/2],0)
-            if target.x>self.x:
-                self.d_start()
+            if abs(self.x-target.x)>self.rang:
+                if target.x>self.x:
+                    self.d_start()
+                else:
+                    self.a_start()
             else:
-                self.a_start()
+                self.move_stop()
         else:
             self.move_stop()
     def move(self,dt):
@@ -385,6 +389,7 @@ class BasicGuyBullet(Projectile):
 class BasicGuy(clone):
     name="BasicGuy"
     cost=clone_stats[name]["cost"]
+    base_cost=clone_stats[name]["base_cost"]
     imageG=images.gunmanG
     imageR=images.gunmanR
     def __init__(self,game,side,**kw):
@@ -392,7 +397,6 @@ class BasicGuy(clone):
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
-        self.rang=self.stats["rang"]
     def shoot(self,a,dt):
         x=a[0]
         y=a[1]
@@ -416,6 +420,7 @@ class BasicGuy(clone):
 class Mixer(clone):
     name="Mixer"
     cost=clone_stats[name]["cost"]
+    base_cost=clone_stats[name]["base_cost"]
     imageG=images.mixerG
     imageR=images.mixerR
     def __init__(self,game,side,**kw):
@@ -432,6 +437,7 @@ class Mixer(clone):
 class Bazooka(clone):
     name="Bazooka"
     cost=clone_stats[name]["cost"]
+    base_cost=clone_stats[name]["base_cost"]
     imageG=images.ZookaG
     imageR=images.ZookaR
     def __init__(self,game,side,**kw):
@@ -439,7 +445,6 @@ class Bazooka(clone):
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
-        self.rang=self.stats["rang"]
         self.eradius=self.stats["eradius"]
     def shoot(self,a,dt):
         x=a[0]
@@ -482,6 +487,7 @@ class BazookaBullet(Projectile):
 class Tele(clone):
     name="Tele"
     cost=clone_stats[name]["cost"]
+    base_cost=clone_stats[name]["base_cost"]
     imageG=images.teleG
     imageR=images.teleR
     def __init__(self,game,side,**kw):
@@ -492,7 +498,7 @@ class Tele(clone):
         self.enemies=game.clones[1-side]
         self.phase=255
     def shoot(self,a,dt):
-        self.x+=a[0]
+        self.x=max(self.x+a[0],50)
         self.y+=a[1]
         self.phase=0
         self.update_pos(self.x,self.y)
@@ -520,6 +526,7 @@ class Tele(clone):
 class Shield(clone):
     name="Shield"
     cost=clone_stats[name]["cost"]
+    base_cost=clone_stats[name]["base_cost"]
     imageG=images.ShieldG
     imageR=images.ShieldR
     def __init__(self,game,side,**kw):
@@ -527,7 +534,6 @@ class Shield(clone):
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
-        self.rang=self.stats["rang"]
     def shoot(self,a,dt):
         x=a[0]
         y=a[1]
@@ -556,6 +562,7 @@ class Shield(clone):
 class Sprayer(clone):
     name="Sprayer"
     cost=clone_stats[name]["cost"]
+    base_cost=clone_stats[name]["base_cost"]
     imageG=images.sprayerG
     imageR=images.sprayerR
     def __init__(self,game,side,**kw):
@@ -563,7 +570,6 @@ class Sprayer(clone):
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
-        self.rang=self.stats["rang"]
     def shoot(self,a,dt):
         for e in a:
             bul=BasicGuyBullet(self.x,self.y+self.height/2,e[0],e[1],self.game,self.side,
@@ -578,17 +584,18 @@ class Sprayer(clone):
 class MegaMixer(clone):
     name="MegaMixer"
     cost=clone_stats[name]["cost"]
+    base_cost=clone_stats[name]["base_cost"]
     imageG=images.megamixerG
     imageR=images.megamixerR
     def __init__(self,game,side,**kw):
         super().__init__(game,side=side,**kw)
         self.dmg=self.stats["dmg"]
-        self.rang=self.stats["rang"]
+        self.radius=self.stats["radius"]
         self.enemies=game.clones[1-self.side]
         self.succ=self.stats["succ"]
     def shoot(self,a,dt):
         for e in self.enemies:
-            if e.exists and abs(e.x-self.x)<self.rang:
+            if e.exists and abs(e.x-self.x)<self.radius:
                 if e.x<self.x:
                     e.x+=self.succ*dt
                 else:
@@ -602,6 +609,7 @@ class MegaMixer(clone):
 class Smash(clone):
     name="Smash"
     cost=clone_stats[name]["cost"]
+    base_cost=clone_stats[name]["base_cost"]
     imageG=images.SmashG
     imageR=images.SmashR
     def __init__(self,game,side,**kw):
@@ -675,6 +683,7 @@ class Smash(clone):
 class MachineGun(clone):
     name="MachineGun"
     cost=clone_stats[name]["cost"]
+    base_cost=clone_stats[name]["base_cost"]
     imageG=images.gunmanG
     imageR=images.gunmanR
     def __init__(self,game,side,**kw):
@@ -682,7 +691,6 @@ class MachineGun(clone):
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
-        self.rang=self.stats["rang"]
     def shoot(self,a,dt):
         x=a[0]
         y=a[1]
@@ -706,6 +714,7 @@ class MachineGun(clone):
 class Tank(clone):
     name="Tank"
     cost=clone_stats[name]["cost"]
+    base_cost=clone_stats[name]["base_cost"]
     imageG=images.tankG
     imageR=images.tankR
     def __init__(self,game,side,**kw):
@@ -713,7 +722,6 @@ class Tank(clone):
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
-        self.rang=self.stats["rang"]
         self.eradius=self.stats["eradius"]
         self.dmg2=self.stats["dmg2"]
         self.enemies=game.clones[1-side]
@@ -752,6 +760,7 @@ class Tank(clone):
 class Engi(clone):
     name="Engi"
     cost=clone_stats[name]["cost"]
+    base_cost=clone_stats[name]["base_cost"]
     imageG=images.engiG
     imageR=images.engiR
     def __init__(self,game,side,**kw):
@@ -833,14 +842,15 @@ class Grenade(Projectile):
 
 class Turret(clone):
     name="Turret"
+    cost=clone_stats[name]["cost"]
+    base_cost=clone_stats[name]["base_cost"]
     imageG=images.turretG
     imageR=images.turretR
-    def __init__(self,game,side,x,y):
+    def __init__(self,game,side,x,y,**kw):
         super().__init__(game,side=side,AI=True)
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
-        self.rang=self.stats["rang"]
         self.eradius=self.stats["eradius"]
         self.update_pos(x,y)
         self.exists=True
@@ -878,6 +888,7 @@ class Turret(clone):
 class MegaSmash(clone):
     name="MegaSmash"
     cost=clone_stats[name]["cost"]
+    base_cost=clone_stats[name]["base_cost"]
     imageG=images.MSmashG
     imageR=images.MSmashR
     def __init__(self,game,side,**kw):
@@ -962,6 +973,7 @@ class MegaSmash(clone):
 class FlameThrower(clone):
     name="FlameThrower"
     cost=clone_stats[name]["cost"]
+    base_cost=clone_stats[name]["base_cost"]
     imageG=images.flameG
     imageR=images.flameR
     def __init__(self,game,side,**kw):
@@ -986,5 +998,5 @@ possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,Engi
                 Tank,MegaSmash,MegaMixer,FlameThrower]
 possible_units.sort(key=get_cost)
 
-base_defenses=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,Engi,
-                Tank,MegaSmash,MegaMixer,FlameThrower,Turret]
+base_defenses=[BasicGuy,Mixer,Bazooka,Tele,Shield,MachineGun,Smash,Engi,
+                Tank,MegaSmash,MegaMixer,FlameThrower]

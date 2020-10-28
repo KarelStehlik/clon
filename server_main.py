@@ -116,10 +116,10 @@ class mode_base_building():
             self.finish()
     def place_thing(self,c,side,x,y):
         if side==1 and x>SCREEN_WIDTH//2 or side==0 and x<SCREEN_WIDTH//2:
-            if self.money[side]>=clones.base_defenses[c].cost:
+            if self.money[side]>=clones.base_defenses[c].base_cost:
                 self.game.add_base_defense(c,side,x,y)
                 channels.send_both({"action":"place_thing","x":x,"y":y,"c":c,"side":side})
-                self.money[side]-=clones.base_defenses[c].cost
+                self.money[side]-=clones.base_defenses[c].base_cost
     def finish(self):
         global mt,current_mode
         mt=mode_testing(self.game)
