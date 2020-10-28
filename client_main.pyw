@@ -192,14 +192,22 @@ class mode_testing(mode):
         self.mapp=mapp
         self.total_time=0
         self.game=game
+        self.time_left=30
+        self.time_indicator=pyglet.text.Label(x=20,y=SCREEN_HEIGHT-20,
+                            text=str(int(self.time_left)),color=(255,255,255,255),
+                            batch=self.batch,group=clones.projectileg,font_size=int(40*SPRITE_SIZE_MULT),
+                            anchor_x="left",anchor_y="top")
     def start_round(self):
         self.win.current_mode=self
         self.game.start_round()
+        self.time_left=self.game.round*5+30
     def summon_clone(self,n,side):
         self.game.summon(n,side)
     def mouse_drag(self,x, y, dx, dy, button, modifiers):
         self.mouse_move(x,y,dx,dy)
     def tick(self,dt):
+        self.time_left-=dt
+        self.time_indicator.text=str(int(self.time_left)+1)
         if not self.game.current_clones[self.side]==None:
             self.total_time+=dt
             self.camx=self.game.get_vpoint()

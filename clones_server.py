@@ -39,13 +39,9 @@ class Game():
         channels.cn[1].get_money(100)
         channels.cn[0].get_money(100)
         self.money_per_round=100
+        self.round=0
     def add_base_defense(self,n,side,x,y):
         base_defenses[n](self,side,x=x,y=y,AI=True)
-    def start_round(self):
-        for e in self.clones[0]:
-            e.start()
-        for e in self.clones[1]:
-            e.start()
     def summon(self,n,side):
         self.current_clones[side]=possible_units[n](self,
                                                     side)
@@ -82,6 +78,7 @@ class Game():
         self.start_round()
     def start_round(self):
         channels.send_both({"action":"start_round"})
+        self.round+=1
         for e in self.clones[0]:
             e.start()
         for e in self.clones[1]:

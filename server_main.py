@@ -73,13 +73,14 @@ class mode_testing():
         self.game.end_round()
     def summon_clones(self,c0,c1):
         self.game.summon_clones(c0,c1)
+        pyglet.clock.schedule_once(self.end_round,self.game.round*5+30)
         self.running=True
     def tick(self,dt):
         if self.running:
             self.game.tick(dt)
-            if ((not self.game.current_clones[1].exists) or (not self.game.current_clones[0].exists)) and not self.end_scheduled:
-                pyglet.clock.schedule_once(self.end_round,5)
-                self.end_scheduled=True
+            if (not self.game.current_clones[1].exists) and (not self.game.current_clones[0].exists):
+                pyglet.clock.unschedule(self.end_round)
+                self.end_round(0)
 
 class mode_choosing():
     def __init__(self):
