@@ -38,6 +38,8 @@ class Game():
         self.deadclones=[]
         channels.cn[1].get_money(999999)
         channels.cn[0].get_money(999999)
+    def add_base_defense(self,n,side,x,y):
+        base_defenses[n](self,side,x=x,y=y,AI=True)
     def start_round(self):
         for e in self.clones[0]:
             e.start()
@@ -105,6 +107,7 @@ class clone():
         self.log=[]
         self.log_completed=0
         self.exist_time=0
+        self.lastshot=0
         game.clones[self.side].append(self)
         self.l=game.clones
         self.facing=1
@@ -139,6 +142,7 @@ class clone():
         self.exists=True
         self.log_completed=0
         self.exist_time=0
+        self.lastshot=0
         self.vx=self.vy=0
         if self.AI:
             self.log=[]
@@ -192,7 +196,7 @@ class clone():
             for e in self.enemies:
                 if e.exists:
                     de=abs(self.x-e.x)
-                    if de<=d:
+                    if de<d:
                         d=de
                         target=e
             if d<self.detect:
@@ -321,7 +325,6 @@ class BasicGuy(clone):
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
         self.rang=self.stats["rang"]
-        self.lastshot=0
     def shoot(self,a,dt):
         if self.active:
             channels.send_both({"action":"shoot","a":a,"side":self.side})
@@ -353,7 +356,6 @@ class Mixer(clone):
     def __init__(self,game,side,**kw):
         super().__init__(game,side=side,**kw)
         self.dmg=self.stats["dmg"]
-        self.lastshot=0
     def shoot(self,a,dt):
         AOE_square(self,self.x,self.y+self.height*2/3,self.width/2,self.enemies,self.dmg*dt)
     def move(self,dt):
@@ -370,7 +372,6 @@ class Bazooka(clone):
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
         self.rang=self.stats["rang"]
-        self.lastshot=0
         self.eradius=self.stats["eradius"]
     def shoot(self,a,dt):
         if self.active:
@@ -412,7 +413,6 @@ class Tele(clone):
         super().__init__(game,side=side,**kw)
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
-        self.lastshot=0
         self.radius=self.stats["radius"]
         self.phase=255
     def shoot(self,a,dt):
@@ -451,7 +451,6 @@ class Shield(clone):
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
         self.rang=self.stats["rang"]
-        self.lastshot=0
     def shoot(self,a,dt):
         if self.active:
             channels.send_both({"action":"shoot","a":a,"side":self.side})
@@ -491,7 +490,6 @@ class Sprayer(clone):
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
         self.rang=self.stats["rang"]
-        self.lastshot=0
     def shoot(self,a,dt):
         if self.active:
             bullet_data=[]
@@ -555,7 +553,6 @@ class Smash(clone):
         self.aspd=self.stats["aspd"]
         self.knockback_x=self.stats["kbx"]
         self.knockback_y=self.stats["kby"]
-        self.lastshot=0
         self.radius=self.stats["radius"]
     def shoot(self,a,dt):
         if self.active:
@@ -585,7 +582,6 @@ class MachineGun(clone):
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
         self.rang=self.stats["rang"]
-        self.lastshot=0
     def shoot(self,a,dt):
         if self.active:
             channels.send_both({"action":"shoot","a":a,"side":self.side})
@@ -620,7 +616,6 @@ class Tank(clone):
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
         self.rang=self.stats["rang"]
-        self.lastshot=0
         self.eradius=self.stats["eradius"]
         self.dmg2=self.stats["dmg2"]
     def shoot(self,a,dt):
@@ -665,8 +660,6 @@ class Engi(clone):
     cost=clone_stats[name]["cost"]
     def __init__(self,game,side,**kw):
         super().__init__(game,side=side,**kw)
-        self.lastshot=0
-        self.turrets=[]
         self.aspd=self.stats["aspd"]
         self.radius=self.stats["radius"]
         self.damage=self.stats["dmg"]
@@ -674,7 +667,7 @@ class Engi(clone):
         self.shoot,self.can_shoot=self.shoot1,self.can_shoot1
     def shoot1(self,a,dt):
         self.turret_spawned=True
-        Turret(self.game,self.side,self.turrets,self.x,self.y)
+        Turret(self.game,self.side,self.x,self.y)
         self.shoot,self.can_shoot=self.shoot2,self.can_shoot2
         if self.active:
             channels.send_both({"action":"shoot","a":a,"side":self.side})
@@ -740,11 +733,8 @@ class Grenade(Projectile):
 
 class Turret(clone):
     name="Turret"
-    def __init__(self,game,side,l2,x,y):
+    def __init__(self,game,side,x,y):
         super().__init__(game,side=side,AI=True)
-        self.l2=l2
-        l2.append(self)
-        self.lastshot=0
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
@@ -756,7 +746,6 @@ class Turret(clone):
         self.schedule_die()
     def die(self):
         self.l[self.side].remove(self)
-        self.l2.remove(self)
         self.exists=False
         del self
     def take_damage(self,amount,source):
@@ -795,7 +784,6 @@ class MegaSmash(clone):
         self.aspd=self.stats["aspd"]
         self.knockback_x=self.stats["kbx"]
         self.knockback_y=self.stats["kby"]
-        self.lastshot=0
         self.radius=self.stats["radius"]
     def shoot(self,a,dt):
         if self.active:
@@ -833,7 +821,6 @@ class FlameThrower(clone):
         self.aspd=self.stats["aspd"]
         self.aoex=self.stats["aoex"]
         self.aoey=self.stats["aoey"]
-        self.lastshot=0
     def shoot(self,a,dt):
         if self.active:
             channels.send_both({"action":"shoot","a":a,"side":self.side})
@@ -851,5 +838,7 @@ class FlameThrower(clone):
 ##################################################################################################
 possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,Engi,
                 Tank,MegaSmash,MegaMixer,FlameThrower]
-
 possible_units.sort(key=get_cost)
+
+base_defenses=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,Engi,
+                Tank,MegaSmash,MegaMixer,FlameThrower,Turret]

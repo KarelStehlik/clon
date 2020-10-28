@@ -173,7 +173,7 @@ class mappClass():
         for e in self.platforms:
             e.pic.x=(e.x-camx)*SPRITE_SIZE_MULT
 class mode_testing(mode):
-    def __init__(self,win,batch,mapp):
+    def __init__(self,win,batch,mapp,game):
         super().__init__(win,batch)
         global side
         self.side=side
@@ -186,9 +186,8 @@ class mode_testing(mode):
         self.half_bg_width=self.background.width//2
         self.bg_shift=0
         self.mapp=mapp
-        self.gravity=1000
         self.total_time=0
-        self.game=clones.Game(self.mapp,self.batch,connection,self.gravity,side=self.side)
+        self.game=game
     def start_round(self):
         self.win.current_mode=self
         self.game.start_round()
@@ -230,13 +229,15 @@ class mode_base_building(mode):
         super().__init__(win,batch)
         global side
         self.side=side
+        self.gravity=1000
         self.mapp=mappClass(maps.maps[mapp],batch)
+        self.game=clones.Game(self.mapp,self.batch,connection,self.gravity,side=self.side)
     def mouse_press(self,x,y,button,modifiers):
         self.try_finish()
     def try_finish(self):
         connection.Send({"action":"finish_base","side":self.side})
     def finish(self):
-        self.win.main=mode_testing(self.win,self.batch,self.mapp)
+        self.win.main=mode_testing(self.win,self.batch,self.mapp,self.game)
         self.win.cc.start(self.side)
 
 class windoo(pyglet.window.Window):

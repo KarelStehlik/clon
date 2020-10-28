@@ -37,6 +37,8 @@ class Game():
         self.bullets=[]
         self.particles=[]
         self.deadclones=[]
+    def add_base_defense(self,n,side,x,y):
+        base_defenses[n](self,side,x=x,y=y,AI=True)
     def start_round(self):
         for e in self.clones[0]:
             e.start()
@@ -143,6 +145,7 @@ class clone():
         self.log=[]
         self.log_completed=0
         self.exist_time=0
+        self.lastshot=0
         game.clones[self.side].append(self)
         self.enemies=game.clones[1-self.side]
         self.facing=1
@@ -183,6 +186,7 @@ class clone():
         self.exists=True
         self.log_completed=0
         self.exist_time=0
+        self.lastshot=0
         self.vx=self.vy=0
         if self.AI:
             self.log=[]
@@ -251,7 +255,7 @@ class clone():
             for e in self.enemies:
                 if e.exists:
                     de=abs(self.x-e.x)
-                    if de<=d:
+                    if de<d:
                         d=de
                         target=e
             if d<self.detect:
@@ -388,7 +392,6 @@ class BasicGuy(clone):
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
         self.rang=self.stats["rang"]
-        self.lastshot=0
     def shoot(self,a,dt):
         x=a[0]
         y=a[1]
@@ -417,7 +420,6 @@ class Mixer(clone):
     def __init__(self,game,side,**kw):
         super().__init__(game,side=side,**kw)
         self.dmg=self.stats["dmg"]
-        self.lastshot=0
         self.enemies=game.clones[1-self.side]
     def shoot(self,a,dt):
         AOE_square(self,self.x,self.y+self.height*2/3,self.width/2,self.enemies,self.dmg*dt)
@@ -437,7 +439,6 @@ class Bazooka(clone):
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
         self.rang=self.stats["rang"]
-        self.lastshot=0
         self.eradius=self.stats["eradius"]
     def shoot(self,a,dt):
         x=a[0]
@@ -486,7 +487,6 @@ class Tele(clone):
         super().__init__(game,side=side,**kw)
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
-        self.lastshot=0
         self.radius=self.stats["radius"]
         self.enemies=game.clones[1-side]
         self.phase=255
@@ -527,7 +527,6 @@ class Shield(clone):
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
         self.rang=self.stats["rang"]
-        self.lastshot=0
     def shoot(self,a,dt):
         x=a[0]
         y=a[1]
@@ -564,7 +563,6 @@ class Sprayer(clone):
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
         self.rang=self.stats["rang"]
-        self.lastshot=0
     def shoot(self,a,dt):
         for e in a:
             bul=BasicGuyBullet(self.x,self.y+self.height/2,e[0],e[1],self.game,self.side,
@@ -609,7 +607,6 @@ class Smash(clone):
         super().__init__(game,side=side,**kw)
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
-        self.lastshot=0
         self.enemies=game.clones[1-side]
         self.smashing="none"
         self.smashing_time=0
@@ -685,7 +682,6 @@ class MachineGun(clone):
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
         self.rang=self.stats["rang"]
-        self.lastshot=0
     def shoot(self,a,dt):
         x=a[0]
         y=a[1]
@@ -717,7 +713,6 @@ class Tank(clone):
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
         self.rang=self.stats["rang"]
-        self.lastshot=0
         self.eradius=self.stats["eradius"]
         self.dmg2=self.stats["dmg2"]
         self.enemies=game.clones[1-side]
@@ -760,8 +755,6 @@ class Engi(clone):
     imageR=images.engiR
     def __init__(self,game,side,**kw):
         super().__init__(game,side=side,**kw)
-        self.lastshot=0
-        self.turrets=[]
         self.aspd=self.stats["aspd"]
         self.radius=self.stats["radius"]
         self.damage=self.stats["dmg"]
@@ -770,7 +763,7 @@ class Engi(clone):
         self.enemies=game.clones[1-side]
     def shoot1(self,a,dt):
         self.turret_spawned=True
-        Turret(self.game,self.side,self.turrets,self.x,self.y)
+        Turret(self.game,self.side,self.x,self.y)
         self.shoot,self.can_shoot=self.shoot2,self.can_shoot2
     def can_shoot1(self):
         if not self.exists:
@@ -841,11 +834,8 @@ class Turret(clone):
     name="Turret"
     imageG=images.turretG
     imageR=images.turretR
-    def __init__(self,game,side,l2,x,y):
+    def __init__(self,game,side,x,y):
         super().__init__(game,side=side,AI=True)
-        self.l2=l2
-        l2.append(self)
-        self.lastshot=0
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
         self.bspd=self.stats["bspd"]
@@ -860,7 +850,6 @@ class Turret(clone):
         self.schedule_die()
     def die(self):
         self.game.clones[self.side].remove(self)
-        self.l2.remove(self)
         self.exists=False
         del self
     def can_shoot(self):
@@ -896,7 +885,6 @@ class MegaSmash(clone):
         self.aspd=self.stats["aspd"]
         self.knockback_x=self.stats["kbx"]
         self.knockback_y=self.stats["kby"]
-        self.lastshot=0
         self.enemies=game.clones[1-side]
         self.smashing="none"
         self.smashing_time=0
@@ -981,7 +969,6 @@ class FlameThrower(clone):
         self.aspd=self.stats["aspd"]
         self.aoey=self.stats["aoey"]
         self.aoex=self.stats["aoex"]
-        self.lastshot=0
     def shoot(self,a,dt):
         AOE_rect(self,self.x,self.y+self.height//2-self.aoey//2,self.x+self.facing*self.aoex,
                  self.y+self.height//2+self.aoey//2,self.enemies,self.dmg)
@@ -997,3 +984,6 @@ class FlameThrower(clone):
 possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,Engi,
                 Tank,MegaSmash,MegaMixer,FlameThrower]
 possible_units.sort(key=get_cost)
+
+base_defenses=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,Engi,
+                Tank,MegaSmash,MegaMixer,FlameThrower,Turret]
