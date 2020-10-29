@@ -428,8 +428,8 @@ class Tele(clone):
         if self.active:
             channels.send_both({"action":"shoot","a":a,"side":self.side})
             self.log.append(["shoot",self.exist_time,a])
-        self.x=max(self.x+a[0],50)
-        self.y+=a[1]
+        self.y=max(self.y+a[1],50)
+        self.x+=a[0]
         self.phase=0
     def can_shoot(self):
         if not self.exists:
