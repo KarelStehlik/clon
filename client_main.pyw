@@ -277,6 +277,7 @@ class mode_base_building(mode):
                             batch=self.batch,group=clones.projectileg,font_size=int(40*SPRITE_SIZE_MULT),
                             anchor_x="right",anchor_y="top")
         self.win.money_label.batch=None
+        self.update_camx(SCREEN_WIDTH//2 if self.side==1 else -SCREEN_WIDTH//2)
     def mouse_scroll(self, x, y, scroll_x, scroll_y):
         self.selected+=int(scroll_y)
         self.selected=self.selected%len(clones.base_defenses)
@@ -291,25 +292,23 @@ class mode_base_building(mode):
                                               group=clones.dudeg,batch=self.batch)
         self.cselect.scale=3
         self.cselect_cost.text=str(int(clones.base_defenses[self.selected].base_cost))
+    def update_camx(self,x):
+        self.camx+=x
+        clones.camx=self.camx
+        self.mapp.update(self.camx)
+        for e in self.game.clones[1]+self.game.clones[0]:
+            e.update_pos(e.x,e.y)
+        self.bg_red.vertices[0::2]=[e-x for e in self.bg_red.vertices[0::2]]
+        self.bg_blue.vertices[0::2]=[e-x for e in self.bg_blue.vertices[0::2]]
     def key_press(self,symbol,modifiers):
         if symbol==key.ENTER:
             self.try_finish()
         elif symbol==key.A:
-            self.camx-=200
-            clones.camx=self.camx
-            self.mapp.update(self.camx)
-            for e in self.game.clones[1]+self.game.clones[0]:
-                e.update_pos(e.x,e.y)
-            self.bg_red.vertices[0::2]=[e+200 for e in self.bg_red.vertices[0::2]]
-            self.bg_blue.vertices[0::2]=[e+200 for e in self.bg_blue.vertices[0::2]]
+            if not (self.side==1 and self.camx==SCREEN_WIDTH//2):
+                self.update_camx(-200)
         elif symbol==key.D:
-            self.camx+=200
-            clones.camx=self.camx
-            self.mapp.update(self.camx)
-            for e in self.game.clones[1]+self.game.clones[0]:
-                e.update_pos(e.x,e.y)
-            self.bg_red.vertices[0::2]=[e-200 for e in self.bg_red.vertices[0::2]]
-            self.bg_blue.vertices[0::2]=[e-200 for e in self.bg_blue.vertices[0::2]]
+            if not (self.side==0 and self.camx==-SCREEN_WIDTH//2):
+                self.update_camx(200)
     def mouse_press(self,x,y,button,modifiers):
         c=self.selected
         if self.money>=clones.base_defenses[c].base_cost:
