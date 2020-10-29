@@ -210,7 +210,7 @@ class clone():
                     self.a_start()
             else:
                 self.move_stop()
-            if e.y>self.y:
+            if target.y>self.y:
                 self.w()
         else:
             self.move_stop()
