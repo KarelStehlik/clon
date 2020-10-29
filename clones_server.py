@@ -422,6 +422,7 @@ class Tele(clone):
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
         self.radius=self.stats["radius"]
+        self.port_speed=self.stats["port_speed"]
         self.phase=255
     def shoot(self,a,dt):
         if self.active:
@@ -441,7 +442,7 @@ class Tele(clone):
     def move(self,dt):
         if (not self.phase==255) and self.exists:
             self.exist_time+=dt
-            self.phase=min(self.phase+300*dt,255)
+            self.phase=min(self.phase+self.port_speed*dt,255)
             if self.phase==255:
                 AOE_square(self,self.x,self.y,self.radius,self.enemies,self.dmg)
         else:

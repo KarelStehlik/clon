@@ -502,6 +502,7 @@ class Tele(clone):
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
         self.radius=self.stats["radius"]
+        self.port_speed=self.stats["port_speed"]
         self.enemies=game.clones[1-side]
         self.phase=255
     def shoot(self,a,dt):
@@ -519,7 +520,7 @@ class Tele(clone):
         if self.phase != 255:
             self.exist_time+=dt
             self.update_pos(self.x,self.y)
-            self.phase=min(self.phase+300*dt,255)
+            self.phase=min(self.phase+self.port_speed*dt,255)
             self.sprite.opacity=self.phase
             if self.phase==255:
                 AOE_square(self,self.x,self.y,self.radius,self.enemies,self.dmg)
