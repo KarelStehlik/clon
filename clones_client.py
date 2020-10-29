@@ -42,6 +42,7 @@ class Game():
         base_defenses[n](self,side,x=x,y=y,AI=True)
     def start_round(self):
         self.round+=1
+        self.deadclones=[]
         for e in self.clones[0]:
             e.start()
         for e in self.clones[1]:

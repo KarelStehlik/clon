@@ -79,6 +79,7 @@ class Game():
     def start_round(self):
         channels.send_both({"action":"start_round"})
         self.round+=1
+        self.deadclones=[]
         for e in self.clones[0]:
             e.start()
         for e in self.clones[1]:
