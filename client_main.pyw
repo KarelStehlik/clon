@@ -200,7 +200,7 @@ class mode_testing(mode):
     def start_round(self):
         self.win.current_mode=self
         self.game.start_round()
-        self.time_left=self.game.round*5+30
+        self.time_left=self.game.round*TIME_PER_WAVE+TIME_BASELINE
     def summon_clone(self,n,side):
         self.game.summon(n,side)
     def mouse_drag(self,x, y, dx, dy, button, modifiers):

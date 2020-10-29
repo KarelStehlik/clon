@@ -73,7 +73,7 @@ class mode_testing():
         self.game.end_round()
     def summon_clones(self,c0,c1):
         self.game.summon_clones(c0,c1)
-        pyglet.clock.schedule_once(self.end_round,self.game.round*5+30)
+        pyglet.clock.schedule_once(self.end_round,self.game.round*TIME_PER_WAVE+TIME_BASELINE)
         self.running=True
     def tick(self,dt):
         if self.running:
