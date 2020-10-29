@@ -69,7 +69,9 @@ class Game():
         for e in self.particles:
             e.tick(dt)
     def get_vpoint(self):
-        return self.current_clones[self.side].vpoint
+        if self.current_clones[self.side].exists:
+            return self.current_clones[self.side].vpoint
+        return self.current_clones[1-self.side].vpoint
 class particle():
     def __init__(self,x,y,size,duration,game):
         self.x,self.y=x,y
