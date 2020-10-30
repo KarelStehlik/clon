@@ -41,9 +41,6 @@ class mode_main(mode):
             self.mapdata=[[g.split(",") for g in e.split("\n")] for e in m.read().split("/")]
         self.camx=0
         self.dragging=False
-    def export(self):
-        w="/".join(["\n".join([",".join(k) for k in e]) for e in self.mapdata])
-        print(w)
     def mouse_press(self,x,y,button,modifiers):
         if self.dragging:
             self.mouse_release(self.x-camx,self.y,button,modifiers)
@@ -55,7 +52,9 @@ class mode_main(mode):
         self.dragging=True
     def out_map(self):
         w="/"+"\n".join([",".join([str(x) for x in k]) for k in self.platforms])
-        print(w)
+        md="/".join(["\n".join([",".join(a) for a in b]) for b in self.mapdata])+w
+        with open("mapdata.txt", "w") as m:
+            m.write(md)
     def mouse_release(self,x,y,button,modifiers):
         x+=self.camx
         w,h,xpos,ypos=x-self.x,y-self.y,self.x,self.y
@@ -85,7 +84,7 @@ class mode_main(mode):
             self.active.x=self.x-self.camx
         self.cx.text=str(self.camx)
     def key_press(self,symbol,modifiers):
-        if symbol==key.E:
+        if symbol==key.S and modifiers and key.MOD_CTRL:
             self.out_map()
         elif symbol==key.D:
             self.camx+=500
@@ -93,7 +92,7 @@ class mode_main(mode):
         elif symbol==key.A:
             self.camx-=500
             self.update_imgs()
-        elif symbol==key.Z and modifiers and key.MOD_CTRL:
+        elif symbol==key.Z and modifiers and key.MOD_CTRL and len(self.platforms)>0:
             self.platforms.pop(-1)
             self.platform_imgs.pop(-1).delete()
 
