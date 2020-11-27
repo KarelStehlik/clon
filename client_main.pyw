@@ -2,7 +2,8 @@ from PodSixNet.Connection import connection,ConnectionListener
 from imports import *
 import maps
 import clones_client as clones
-from constants import * 
+from constants import *
+import multiprocessing as mpc
 connection.DoConnect(('192.168.1.132', 5071))
 class MyNetworkListener(ConnectionListener):
     def __init__(self,*args,**kwargs):
@@ -30,6 +31,9 @@ class MyNetworkListener(ConnectionListener):
     def Network_jump(self,data):
         #print(data["action"])
         place.main.game.current_clones[data["side"]].w()
+    def Network_ability(self,data):
+        #print(data["action"])
+        place.main.game.current_clones[data["side"]].ability(data["ID"],data["value"])
     def Network_summon(self,data):
         #print(data["action"])
         place.main.summon_clone(data["c"],data["s"])
@@ -168,6 +172,7 @@ class mode_choosing(mode):
             for e in self.cframes+self.imgs+[self.select]:
                 e.x+=w
             self.moved+=1
+
 class mappClass():
     def __init__(self,inp,batch):
         self.platforms=[]
@@ -220,6 +225,7 @@ class mode_testing(mode):
             self.background.x=-cx+self.bg_shift*self.half_bg_width
             self.mapp.update(cx)
             self.game.tick(dt,self.win.mouseheld,self.mousex,self.mousey)
+            self.game.graphics_update(1/60)
             super().tick(dt)
     def key_press(self,symbol,modifiers):
         if symbol==key.A:
@@ -228,6 +234,8 @@ class mode_testing(mode):
             connection.Send({"action": "D"})
         if symbol==key.W:
             connection.Send({"action": "jump"})
+        else:
+            self.game.key_press(symbol,self.side)
     def key_release(self,symbol,modifiers):
         if (symbol==key.A and not self.win.keys[key.D]) or (symbol==key.D and not self.win.keys[key.A]):
             connection.Send({"action": "stop"})
@@ -297,7 +305,7 @@ class mode_base_building(mode):
         clones.camx=self.camx
         self.mapp.update(self.camx)
         for e in self.game.clones[1]+self.game.clones[0]:
-            e.update_pos(e.x,e.y)
+            e.graphics_update()
         self.bg_red.vertices[0::2]=[e-x for e in self.bg_red.vertices[0::2]]
         self.bg_blue.vertices[0::2]=[e-x for e in self.bg_blue.vertices[0::2]]
     def key_press(self,symbol,modifiers):

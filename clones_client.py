@@ -4,7 +4,9 @@ import time
 import numpy as np
 import math
 import random
+from pyglet.window import key
 from constants import *
+from imports import *
 dudeg=pyglet.graphics.OrderedGroup(2)
 projectileg=pyglet.graphics.OrderedGroup(3)
 camx=0
@@ -25,6 +27,17 @@ load_stats()
 def get_cost(c):
     return c.cost
 
+class TexGroup(pyglet.graphics.OrderedGroup):
+    def __init__(self,texture,layer=4):
+        super().__init__(layer)
+        self.tex=texture
+        pyglet.gl.glEnable(GL_BLEND)
+    def set_state(self):
+        pyglet.gl.glEnable(self.tex.target)
+        pyglet.gl.glBindTexture(self.tex.target, self.tex.id)
+    def unset_state(self):
+        pyglet.gl.glDisable(self.tex.target)
+
 class Game():
     def __init__(self,mapp,batch,connection,gravity,side=0):
         self.clones=[[],[]]
@@ -39,7 +52,7 @@ class Game():
         self.deadclones=[]
         self.round=0
     def add_base_defense(self,n,side,x,y):
-        base_defenses[n](self,side,x=x,y=y,AI=True)
+        base_defenses[n](self,side,x=x,y=y,AI=True).graphics_update()
     def start_round(self):
         self.round+=1
         self.deadclones=[]
@@ -66,12 +79,25 @@ class Game():
             e.move(dt)
         for e in self.bullets:
             e.move(dt)
-        for e in self.particles:
-            e.tick(dt)
     def get_vpoint(self):
         if self.current_clones[self.side].exists:
             return self.current_clones[self.side].vpoint
         return self.current_clones[1-self.side].vpoint
+    def graphics_update(self,dt):
+        for e in self.clones[0]:
+            e.graphics_update()
+        for e in self.clones[1]:
+            e.graphics_update()
+        for e in self.bullets:
+            e.graphics_update()
+        for e in self.particles:
+            e.tick(dt)
+    def key_press(self,symbol,side):
+        keys=[key._1,key._2,key._3,key._4,key._5,key._6,key._7,key._8,key._9,key._0]
+        if symbol in keys:
+            self.connection.Send({"action": "ability",
+                                "ID":keys.index(symbol),"value":0})
+        
 class particle():
     def __init__(self,x,y,size,duration,game):
         self.x,self.y=x,y
@@ -184,6 +210,8 @@ class clone():
         if AI:
             self.detect=stats["detect"]
         self.update_pos(self.x,self.y)
+    def ability(self,ID,value):
+        pass
     def start(self):
         self.x,self.y=self.baseX,self.baseY
         self.sprite.batch=self.game.batch
@@ -211,12 +239,8 @@ class clone():
         if self.exists and not self.active:
             self.update_health(self.hp-amount)
     def update_pos(self,x,y):
-        self.sprite.update(x=(x-camx)*SPRITE_SIZE_MULT,y=y*SPRITE_SIZE_MULT)
-        self.hpbar.update(x=(x-self.width//2-camx)*SPRITE_SIZE_MULT,y=(y+self.height)*SPRITE_SIZE_MULT)
         self.x,self.y=x,y
         self.vpoint=self.x-1280/2
-        for e in self.additional_images:
-            e[0].update(x=(self.x+e[1]-camx)*SPRITE_SIZE_MULT,y=(self.y+e[2])*SPRITE_SIZE_MULT)
     def on_ground(self):
         for e in self.game.mapp.platforms:
             if self.y==e.y+e.h and e.x<self.x<e.x+e.w:
@@ -283,8 +307,9 @@ class clone():
         if self.exists:
             if self.AI:
                 self.AI_move()
-            if self.move_locked and self.on_ground():
-                self.move_locked=False
+            if self.on_ground():
+                if self.move_locked:
+                    self.move_locked=False
                 self.vx=self.moving*self.spd
             self.exist_time+=dt
             if not self.active:
@@ -305,6 +330,8 @@ class clone():
                             elif e[0]=="die":
                                 self.schedule_die()
                                 return
+                            elif e[0]=="ability":
+                                self.ability(e[2],e[3])
                         else:
                             break
                 self.x=self.x+self.vx*dt
@@ -325,6 +352,12 @@ class clone():
                 if self.y<=-500:
                     self.schedule_die()
             self.update_pos(self.x,self.y)
+    def graphics_update(self):
+        self.sprite.update(x=(self.x-camx)*SPRITE_SIZE_MULT,y=self.y*SPRITE_SIZE_MULT)
+        self.hpbar.update(x=(self.x-self.width//2-camx)*SPRITE_SIZE_MULT,
+                          y=(self.y+self.height)*SPRITE_SIZE_MULT)
+        for e in self.additional_images:
+            e[0].update(x=(self.x+e[1]-camx)*SPRITE_SIZE_MULT,y=(self.y+e[2])*SPRITE_SIZE_MULT)
     def stomp(self,amount):
         pass
     def shoot(self,a,dt=0):
@@ -335,7 +368,8 @@ class clone():
         if self.active:
             self.active=False
             self.log.sort(key=take_second)
-            self.additional_images=[]
+            while len(self.additional_images)>0:
+                self.additional_images.pop(0)[0].delete()
         self.vx=0
         self.vy=0
         self.moving=0
@@ -357,8 +391,9 @@ class Projectile():
     def move(self,dt):
         self.x+=self.vx*dt
         self.y+=self.vy*dt
-        self.sprite.update(x=SPRITE_SIZE_MULT*(self.x-camx),y=SPRITE_SIZE_MULT*self.y)
         self.collide()
+    def graphics_update(self):
+        self.sprite.update(x=SPRITE_SIZE_MULT*(self.x-camx),y=SPRITE_SIZE_MULT*self.y)
     def collide(self):
         for e in self.enemies:
             if e.exists and e.x-e.width/2<self.x<e.x+e.width/2 and e.y<self.y<e.y+e.height:
@@ -817,7 +852,8 @@ class Grenade(Projectile):
                 self.sprite.rotation=-90
             else:
                 self.sprite.rotation==90
-        self.sprite.rotation=-math.atan(vy/vx)*180/math.pi
+        else:
+            self.sprite.rotation=-math.atan(vy/vx)*180/math.pi
     def explode(self,e=None):
         AOE_square(self,self.x,self.y,self.radius,self.enemies,self.damage)
         fire(self.x,self.y,0,0.5,self.game,growth=self.radius/150)
@@ -1002,8 +1038,93 @@ class FlameThrower(clone):
             return True
         return False
 ########################################################################
+class Jetpack(clone):
+    name="Jetpack"
+    cost=clone_stats[name]["cost"]
+    imageG=images.jetG
+    imageR=images.jetR
+    jicon=TexGroup(images.JetIconTex)
+    def __init__(self,game,side,**kw):
+        super().__init__(game,side=side,**kw)
+        self.dmg=self.stats["dmg"]
+        self.aspd=self.stats["aspd"]
+        self.radius=self.stats["radius"]
+        self.boost=self.stats["boost"]
+        self.flycd=self.stats["flycd"]
+        self.turnspeed=self.stats["turnspeed"]
+        self.maxvx=self.stats["maxvx"]
+        self.vydamp=self.stats["vydamp"]
+        self.maxfuel=self.fuel=self.stats["maxfuel"]
+        self.fuelregen=self.stats["fuelregen"]
+        self.angle=math.pi/2
+        if self.side==self.game.side:
+            glEnable(GL_BLEND)
+            self.jeticon=self.game.batch.add(
+                4,pyglet.gl.GL_QUADS,self.jicon,
+                ("v2f",(SCREEN_WIDTH-110,10,SCREEN_WIDTH-10,10,SCREEN_WIDTH-10,120,SCREEN_WIDTH-110,120)),
+                ("t2f",(0,0,1,0,1,1,0,1))
+            )
+    def die(self):
+        if self.active and self.side==self.game.side:
+            self.jeticon.delete()
+        super().die()
+    def graphics_update(self):
+        self.sprite.update(x=(self.x-camx)*SPRITE_SIZE_MULT,y=(self.y+self.height/2)*SPRITE_SIZE_MULT)
+        self.hpbar.update(x=(self.x-self.width//2-camx)*SPRITE_SIZE_MULT,
+                          y=(self.y+self.height)*SPRITE_SIZE_MULT)
+        for e in self.additional_images:
+            e[0].update(x=(self.x+e[1]-camx)*SPRITE_SIZE_MULT,y=(self.y+e[2])*SPRITE_SIZE_MULT)
+    def ability(self,ID,value):
+        if ID==0:
+            a=Grenade(self.x,self.y,0,10,self.game,self.side,
+                    self.rang,self.dmg,self.radius)
+            a.vx=self.vx
+    def shoot(self,a,dt):
+        if a==[0,0]:
+            newangle=0
+        elif a[0]==0:
+            newangle=(a[1]>0)*math.pi
+        elif a[0]>0:
+            newangle=math.atan(a[1]/a[0])
+        elif a[0]<0:
+            newangle=math.atan(a[1]/a[0])+math.pi
+        newangle%=2*math.pi
+        if newangle<self.angle:
+            if self.angle-newangle>math.pi:
+                self.angle+=min(self.turnspeed,newangle+2*math.pi-self.angle)
+            else:
+                self.angle-=min(self.turnspeed,self.angle-newangle)
+        else:
+            if newangle-self.angle>math.pi:
+                self.angle-=min(self.turnspeed,self.angle+2*math.pi-newangle)
+            else:
+                self.angle+=min(self.turnspeed,newangle-self.angle)
+        self.angle%=2*math.pi
+        self.knockback(math.cos(self.angle)*self.boost,
+                       math.sin(self.angle)*self.boost*self.vydamp)
+        self.vx=min(self.maxvx,max(-self.maxvx,self.vx))
+        self.sprite.rotation=-self.angle/math.pi*180+90
+        if self.active:
+            self.fuel-=1
+    def can_shoot(self):
+        if self.fuel<1 or self.exists==False:
+            return False
+        t=self.exist_time
+        if t-self.lastshot>self.flycd and self.exists:
+            self.lastshot=t
+            return True
+        return False
+    def move(self,dt):
+        self.fuel=min(self.fuel+self.fuelregen*dt,self.maxfuel)
+        super().move(dt)
+        self.update_icon()
+    def update_icon(self):
+        if self.active and self.side==self.game.side:
+            self.jeticon.vertices[5]=self.jeticon.vertices[7]=10+110*self.fuel/self.maxfuel
+            self.jeticon.tex_coords[5]=self.jeticon.tex_coords[7]=self.fuel/self.maxfuel
+#######################################################################################
 possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,Engi,
-                Tank,MegaSmash,MegaMixer,FlameThrower]
+                Tank,MegaSmash,MegaMixer,FlameThrower,Jetpack]
 possible_units.sort(key=get_cost)
 
 base_defenses=[BasicGuy,Mixer,Bazooka,Tele,Shield,MachineGun,Smash,Engi,

@@ -14,3 +14,5 @@ import requests
 import threading
 import images
 import os
+from pyglet.gl import *
+glEnable(GL_BLEND)

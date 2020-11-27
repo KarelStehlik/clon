@@ -131,6 +131,10 @@ class clone():
         self.AI=AI
         if AI:
             self.detect=stats["detect"]
+    def ability(self,ID,value):
+        if self.exists and self.active:
+            self.log.append(["ability",self.exist_time,ID,value])
+            channels.send_both({"action":"ability","side":self.side,"ID":ID,"value":value})
     def add_shoot(self,a):
         self.shoot_queue.append(a)
     def can_shoot(self):
@@ -217,8 +221,9 @@ class clone():
             self.move_stop()
     def move(self,dt):
         if self.exists:
-            if self.move_locked and self.on_ground():
-                self.move_locked=False
+            if self.on_ground():
+                if self.move_locked:
+                    self.move_locked=False
                 self.vx=self.moving*self.spd
             self.exist_time+=dt
             if self.AI:
@@ -244,6 +249,8 @@ class clone():
                             elif e[0]=="die":
                                 self.schedule_die()
                                 return
+                            elif e[0]=="ability":
+                                self.ability(e[2],e[3])
                         else:
                             break
             self.x=self.x+self.vx*dt
@@ -851,8 +858,82 @@ class FlameThrower(clone):
             return True
         return False
 ##################################################################################################
+class Jetpack(clone):
+    name="Jetpack"
+    cost=clone_stats[name]["cost"]
+    def __init__(self,game,side,**kw):
+        super().__init__(game,side=side,**kw)
+        self.dmg=self.stats["dmg"]
+        self.aspd=self.stats["aspd"]
+        self.radius=self.stats["radius"]
+        self.boost=self.stats["boost"]
+        self.flycd=self.stats["flycd"]
+        self.turnspeed=self.stats["turnspeed"]
+        self.maxvx=self.stats["maxvx"]
+        self.vydamp=self.stats["vydamp"]
+        self.maxfuel=self.fuel=self.stats["maxfuel"]
+        self.fuelregen=self.stats["fuelregen"]
+        self.angle=math.pi/2
+        self.lastused1=0
+    def ability(self,ID,value):
+        if ID==0 and self.can_use_1():
+            super().ability(ID,value)
+            self.lastused1=self.exist_time
+            a=Grenade(self.x,self.y,0,10,self.l[1-self.side],
+                        self.rang,self.dmg,self.game,self.radius)
+            a.vx=self.vx
+    def shoot(self,a,dt):
+        if self.active:
+            channels.send_both({"action":"shoot","a":a,"side":self.side})
+            self.log.append(["shoot",self.exist_time,a])
+            self.fuel-=1
+        if a==[0,0]:
+            newangle=0
+        elif a[0]==0:
+            newangle=(a[1]>0)*math.pi
+        elif a[0]>0:
+            newangle=math.atan(a[1]/a[0])
+        elif a[0]<0:
+            newangle=math.atan(a[1]/a[0])+math.pi
+        newangle%=2*math.pi
+        if newangle<self.angle:
+            if self.angle-newangle>math.pi:
+                self.angle+=min(self.turnspeed,newangle+2*math.pi-self.angle)
+            else:
+                self.angle-=min(self.turnspeed,self.angle-newangle)
+        else:
+            if newangle-self.angle>math.pi:
+                self.angle-=min(self.turnspeed,self.angle+2*math.pi-newangle)
+            else:
+                self.angle+=min(self.turnspeed,newangle-self.angle)
+        self.angle%=2*math.pi
+        self.knockback(math.cos(self.angle)*self.boost,
+                       math.sin(self.angle)*self.boost*self.vydamp)
+        self.vx=min(self.maxvx,max(-self.maxvx,self.vx))
+    def can_shoot(self):
+        if self.fuel<1 or not self.exists:
+            return False
+        t=self.exist_time
+        if t-self.lastshot>self.flycd:
+            self.lastshot=t
+            return True
+        return False
+    def can_use_1(self):
+        if not self.exists:
+            return False
+        if not self.active:
+            return True
+        t=self.exist_time
+        if t-self.lastused1>self.aspd:
+            self.lastused1=t
+            return True
+        return False
+    def move(self,dt):
+        super().move(dt)
+        self.fuel=min(self.fuel+self.fuelregen*dt,self.maxfuel)
+#################################################################################################
 possible_units=[BasicGuy,Mixer,Bazooka,Tele,Shield,Sprayer,MachineGun,Smash,Engi,
-                Tank,MegaSmash,MegaMixer,FlameThrower]
+                Tank,MegaSmash,MegaMixer,FlameThrower,Jetpack]
 possible_units.sort(key=get_cost)
 
 base_defenses=[BasicGuy,Mixer,Bazooka,Tele,Shield,MachineGun,Smash,Engi,

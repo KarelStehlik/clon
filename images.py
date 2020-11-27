@@ -20,6 +20,7 @@ sprayerR=pyglet.resource.image("imagefolder/BSprayer.png")
 sprayerG=pyglet.resource.image("imagefolder/GSprayer.png")
 flameR=pyglet.resource.image("imagefolder/BFlamethrower.png")
 flameG=pyglet.resource.image("imagefolder/GFlamethrower.png")
+JetIconTex=pyglet.image.load("imagefolder/JetIcon.png").get_texture()
 
 earthquack=pyglet.resource.image("imagefolder/earthquack.png")
 earthquack.anchor_x=earthquack.width//2
@@ -30,6 +31,8 @@ SmashGL=pyglet.resource.image("imagefolder/GSmashL.png")
 SmashRR=pyglet.resource.image("imagefolder/BSmashR.png")
 SmashGR=pyglet.resource.image("imagefolder/GSmashR.png")
 Background=pyglet.resource.image("imagefolder/Background.png")
+jetR=pyglet.resource.image("imagefolder/BJet.png")
+jetG=pyglet.resource.image("imagefolder/GJet.png")
 for e in [SmashR,SmashG]:
     e.width=80*SPRITE_SIZE_MULT
     e.height=120*SPRITE_SIZE_MULT
@@ -74,6 +77,13 @@ flameG.height=90*SPRITE_SIZE_MULT
 flameR.width=65*SPRITE_SIZE_MULT
 flameR.height=90*SPRITE_SIZE_MULT
 flameG.anchor_x=flameR.anchor_x=30*SPRITE_SIZE_MULT
+
+jetG.width=160*SPRITE_SIZE_MULT
+jetG.height=130*SPRITE_SIZE_MULT
+jetR.width=160*SPRITE_SIZE_MULT
+jetR.height=130*SPRITE_SIZE_MULT
+jetG.anchor_x=jetR.anchor_x=80*SPRITE_SIZE_MULT
+jetG.anchor_y=jetR.anchor_y=65*SPRITE_SIZE_MULT
 
 sprayerG.width=60*SPRITE_SIZE_MULT
 sprayerG.height=80*SPRITE_SIZE_MULT

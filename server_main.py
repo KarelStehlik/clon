@@ -28,6 +28,8 @@ class player_channel(Channel):
         channels.send_both({"action":"jump","side":self.side})
     def Network_shoot(self,data):
         mt.game.current_clones[self.side].add_shoot(data["a"])
+    def Network_ability(self,data):
+        mt.game.current_clones[self.side].ability(data["ID"],data["value"])
     def Network_chosen(self,data):
         mc.make_choice(self.side,data["choice"],self.money)
     def Network_finish_base(self,data):

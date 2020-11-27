@@ -12,3 +12,4 @@ Engi:cost=5000,hp=50,height=70,width=30,spd=200,jump=600,aspd=1,radius=50,dmg=20
 Turret:cost=0,hp=500,height=60,width=30,spd=0,jump=0,aspd=2,bspd=700,rang=1500,dmg=600,eradius=100,detect=700,base_cost=0
 MegaSmash:cost=6000,hp=10000,height=150,width=100,spd=200,jump=800,dmg=800,aspd=3,radius=70,kbx=1000,kby=300,detect=600,base_cost=200,rang=100
 FlameThrower:cost=750,hp=200,height=90,width=45,spd=250,jump=600,dmg=15,aspd=0.1,aoex=250,aoey=50,detect=500,base_cost=70,rang=250
+Jetpack:cost=0,hp=300,height=120,width=120,spd=200,jump=600,dmg=100,aspd=1,bspd=400,rang=40,radius=50,boost=100,flycd=0.03,turnspeed=1,maxvx=1500,vydamp=1,maxfuel=50,fuelregen=10
