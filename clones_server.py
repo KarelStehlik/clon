@@ -36,8 +36,8 @@ class Game():
         self.gravity=gravity
         self.bullets=[]
         self.deadclones=[]
-        channels.cn[1].get_money(100)
-        channels.cn[0].get_money(100)
+        channels.cn[1].get_money(1000000000000)
+        channels.cn[0].get_money(1000000000000)
         self.money_per_round=100
         self.round=0
     def add_base_defense(self,n,side,x,y):
@@ -493,9 +493,9 @@ class Shield(clone):
         return False
     def take_damage(self,amount,source):
         if (source.x>self.x and self.facing==1) or (source.x<self.x and self.facing==-1):
-            super().take_damage(amount/4,source)
+            super().take_damage(-1)
         else:
-            super().take_damage(amount,source)
+            super().take_damage(max(1,amount/1048576),source)
 ##########################################################################################################################################
 class Sprayer(clone):
     name="Sprayer"
@@ -509,10 +509,10 @@ class Sprayer(clone):
     def shoot(self,a,dt):
         if self.active:
             bullet_data=[]
-            for i in range(500):
+            for i in range(100):
                 x=random.random()*random.choice([-1,1])
                 y=random.random()*random.choice([-1,1])
-                v=random.randint(int(self.bspd/1.1),self.bspd)
+                v=random.randint(self.bspd,self.bspd*2)
                 if x==0:
                     vx=v
                     vy=0
@@ -599,23 +599,27 @@ class MachineGun(clone):
         super().__init__(game,side=side,**kw)
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
+        self.eradius=self.stats["eradius"]
         self.bspd=self.stats["bspd"]
     def shoot(self,a,dt):
         if self.active:
             channels.send_both({"action":"shoot","a":a,"side":self.side})
             self.log.append(["shoot",self.exist_time,a])
-        x=a[0]
-        y=a[1]
-        if x==0:
-            vx=self.bspd
-            vy=0
-        else:
-            vx=self.bspd/math.sqrt(y**2/x**2+1)
-            if x<0:
-                vx*=-1
-            vy=vx*y/x
-        a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
-                         self.rang,self.dmg,self.game)
+        a[1]-=50
+        for e in range(100):
+            x=a[0]
+            y=a[1]
+            if x==0:
+                vx=self.bspd
+                vy=0
+            else:
+                vx=self.bspd/math.sqrt(y**2/x**2+1)
+                if x<0:
+                    vx*=-1
+                vy=vx*y/x
+            adththdhtrhtrh=BazookaBullet(self.x,self.y+self.height/2,vx,vy,self.l[1-self.side],
+                         self.rang,self.dmg,self.game,self.eradius)
+            a[1]+=1
     def can_shoot(self):
         if not self.exists:
             return False
@@ -685,9 +689,7 @@ class Engi(clone):
         self.turret_spawned=False
         self.shoot,self.can_shoot=self.shoot1,self.can_shoot1
     def shoot1(self,a,dt):
-        self.turret_spawned=True
         Turret(self.game,self.side,self.x,self.y)
-        self.shoot,self.can_shoot=self.shoot2,self.can_shoot2
         if self.active:
             channels.send_both({"action":"shoot","a":a,"side":self.side})
             self.log.append(["shoot",self.exist_time,a])
