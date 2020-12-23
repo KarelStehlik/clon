@@ -1,6 +1,6 @@
 BasicGuy:cost=0,hp=50,height=70,width=3000,spd=200,jump=600,dmg=-60000,aspd=0.7,bspd=400,rang=400,detect=500,base_cost=15
 Mixer:cost=50,hp=100,height=60,width=30,spd=30000,jump=400000000,dmg=200,detect=300,base_cost=25,rang=0
-Bazooka:cost=500,hp=150,height=1000,width=65,spd=200,jump=6000,dmg=2,aspd=3,bspd=5000,rang=800,eradius=10000,detect=900,base_cost=50
+Bazooka:cost=500,hp=150,height=1000,width=65,spd=200,jump=600,dmg=2,aspd=3,bspd=500,rang=800,eradius=10000,detect=900,base_cost=50
 Tele:cost=250,hp=50,height=80,width=44,spd=200,jump=600,dmg=60,aspd=1,radius=200,detect=1500,base_cost=30,rang=700,port_speed=400
 Shield:cost=500,hp=50,height=70,width=300,spd=200,jump=600,dmg=2000000000,aspd=0.1,bspd=1,rang=400,detect=700,base_cost=65
 Sprayer:cost=400,hp=808,height=110,width=70,spd=80,jump=400,dmg=1000000000,aspd=1,bspd=500,rang=1000000,detect=400,base_cost=50
