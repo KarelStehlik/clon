@@ -600,7 +600,7 @@ class Shield(clone):
         if (source.x>self.x and self.facing==1) or (source.x<self.x and self.facing==-1):
             super().take_damage(-1,source)
         else:
-            super().take_damage(max(1,amount/1048576),source)
+            super().take_damage(min(1,amount/1048576),source)
 ##############################################################################
 class Sprayer(clone):
     name="Sprayer"
