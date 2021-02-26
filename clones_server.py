@@ -493,7 +493,7 @@ class Shield(clone):
         return False
     def take_damage(self,amount,source):
         if (source.x>self.x and self.facing==1) or (source.x<self.x and self.facing==-1):
-            super().take_damage(-1,source)
+            super().take_damage(-1)
         else:
             super().take_damage(max(1,amount/1048576),source)
 ##########################################################################################################################################
