@@ -598,9 +598,9 @@ class Shield(clone):
         return False
     def take_damage(self,amount,source):
         if (source.x>self.x and self.facing==1) or (source.x<self.x and self.facing==-1):
-            super().take_damage(-1)
+            super().take_damage(amount/4,source)
         else:
-            super().take_damage(max(1,amount/1048576),source)
+            super().take_damage(amount,source)
 ##############################################################################
 class Sprayer(clone):
     name="Sprayer"
@@ -733,24 +733,20 @@ class MachineGun(clone):
         super().__init__(game,side=side,**kw)
         self.dmg=self.stats["dmg"]
         self.aspd=self.stats["aspd"]
-        self.eradius=self.stats["eradius"]
         self.bspd=self.stats["bspd"]
     def shoot(self,a,dt):
-        a[1]-=50
-        for e in range(100):
-            x=a[0]
-            y=a[1]
-            if x==0:
-                vx=self.bspd
-                vy=0
-            else:
-                vx=self.bspd/math.sqrt(y**2/x**2+1)
-                if x<0:
-                    vx*=-1
-                vy=vx*y/x
-            abfyybfbnfb=BazookaBullet(self.x,self.y+self.height/2,vx,vy,self.game,self.side,
-                         self.rang,self.dmg,self.eradius)
-            a[1]+=1
+        x=a[0]
+        y=a[1]
+        if x==0:
+            vx=self.bspd
+            vy=0
+        else:
+            vx=self.bspd/math.sqrt(y**2/x**2+1)
+            if x<0:
+                vx*=-1
+            vy=vx*y/x
+        a=BasicGuyBullet(self.x,self.y+self.height/2,vx,vy,self.game,self.side,
+                         self.rang,self.dmg)
     def can_shoot(self):
         t=self.exist_time
         if t-self.lastshot>self.aspd and self.exists:
@@ -819,7 +815,9 @@ class Engi(clone):
         self.shoot,self.can_shoot=self.shoot1,self.can_shoot1
         self.enemies=game.clones[1-side]
     def shoot1(self,a,dt):
+        self.turret_spawned=True
         Turret(self.game,self.side,self.x,self.y)
+        self.shoot,self.can_shoot=self.shoot2,self.can_shoot2
     def can_shoot1(self):
         if not self.exists:
             return False
