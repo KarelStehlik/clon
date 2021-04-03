@@ -53,7 +53,7 @@ class cw_server(Server):
             channels.send_both({"action":"start",
                                 "mapp":mappNum})
 
-srvr=cw_server(localaddr=("192.168.1.132",5071))
+srvr=cw_server(localaddr=("127.0.0.1",5071))
 
 class mode_building():
     def __init__(self,**kw):

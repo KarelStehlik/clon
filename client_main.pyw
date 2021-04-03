@@ -4,7 +4,7 @@ import maps
 import clones_client as clones
 from constants import *
 import multiprocessing as mpc
-connection.DoConnect(('192.168.1.132', 5071))
+connection.DoConnect(('127.0.0.1', 5071))
 class MyNetworkListener(ConnectionListener):
     def __init__(self,*args,**kwargs):
         super().__init__()
